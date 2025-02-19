@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>모둠 점수</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: black;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    /* 상단에 설정 버튼 그룹 */
+    .settings-buttons {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+    }
+    .settings-buttons button {
+      font-size: 1rem;
+      padding: 6px 10px;
+      margin-right: 5px;
+      background-color: #444;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    h1 {
+      font-size: 5rem;
+      text-align: center;
+      margin: 60px 0 20px;
+    }
+    .container {
+      flex: 1;
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    .team {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      border: 5px solid white;
+      background-color: #222;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    .team-name {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      color: #ffffff;
+    }
+    .score {
+      font-size: 10rem;
+      margin: 20px 0;
+      color: #ffffff;
+    }
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .button-container button {
+      font-size: 2rem;
+      padding: 10px 15px;
+      cursor: pointer;
+      border: none;
+      background-color: yellow;
+      color: black;
+      font-weight: bold;
+      border-radius: 10px;
+      flex: 1;
+      max-width: 80px;
+    }
+    /* 모달창 기본 스타일 */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.8);
+    }
+    .modal-content {
+      background-color: #333;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 90%;
+      max-width: 600px;
+      color: white;
+      border-radius: 10px;
+    }
+    .modal-content h2 {
+      margin-top: 0;
+      border-bottom: 1px solid #555;
+      padding-bottom: 5px;
+    }
+    .modal-content label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    .modal-content input[type="color"],
+    .modal-content input[type="range"],
+    .modal-content input[type="text"],
+    .modal-content textarea {
+      width: 100%;
+      padding: 8px;
+      font-size: 1rem;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    .modal-content .range-display {
+      text-align: right;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+    }
+    .btn-group {
+      text-align: right;
+    }
+    .btn-group button {
+      font-size: 1rem;
+      padding: 8px 15px;
+      margin: 10px 5px 0 0;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+    }
+    .close-btn {
+      background-color: #555;
+      color: white;
+    }
+    /* 반응형 */
+    @media (max-width: 600px) {
+      .score {
+        font-size: 6rem;
+      }
+      h1 {
+        font-size: 3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 상단 설정 버튼 -->
+  <div class="settings-buttons">
+    <button onclick="openModal('titleModal')">제목 설정</button>
+    <button onclick="openModal('bgModal')">배경 설정</button>
+    <button onclick="openModal('teamModal')">모둠명 설정</button>
+    <button onclick="openModal('scoreModal')">점수 설정</button>
+    <button onclick="openModal('exportModal')">데이터 내보내기</button>
+    <button onclick="openModal('importModal')">데이터 불러오기</button>
+  </div>
+
+  <h1 id="title">모둠 점수</h1>
+  <div class="container">
+    <div class="team" id="team1" onclick="resetScore(1)">
+      <span class="team-name" id="teamName1">1모둠</span>
+      <span id="score1" class="score">0</span>
+      <div class="button-container">
+        <button onclick="event.stopPropagation(); changeScore(1, 1)">+</button>
+        <button onclick="event.stopPropagation(); changeScore(1, -1)">-</button>
+      </div>
+    </div>
+    <div class="team" id="team2" onclick="resetScore(2)">
+      <span class="team-name" id="teamName2">2모둠</span>
+      <span id="score2" class="score">0</span>
+      <div class="button-container">
+        <button onclick="event.stopPropagation(); changeScore(2, 1)">+</button>
+        <button onclick="event.stopPropagation(); changeScore(2, -1)">-</button>
+      </div>
+    </div>
+    <div class="team" id="team3" onclick="resetScore(3)">
+      <span class="team-name" id="teamName3">3모둠</span>
+      <span id="score3" class="score">0</span>
+      <div class="button-container">
+        <button onclick="event.stopPropagation(); changeScore(3, 1)">+</button>
+        <button onclick="event.stopPropagation(); changeScore(3, -1)">-</button>
+      </div>
+    </div>
+    <div class="team" id="team4" onclick="resetScore(4)">
+      <span class="team-name" id="teamName4">4모둠</span>
+      <span id="score4" class="score">0</span>
+      <div class="button-container">
+        <button onclick="event.stopPropagation(); changeScore(4, 1)">+</button>
+        <button onclick="event.stopPropagation(); changeScore(4, -1)">-</button>
+      </div>
+    </div>
+    <div class="team" id="team5" onclick="resetScore(5)">
+      <span class="team-name" id="teamName5">5모둠</span>
+      <span id="score5" class="score">0</span>
+      <div class="button-container">
+        <button onclick="event.stopPropagation(); changeScore(5, 1)">+</button>
+        <button onclick="event.stopPropagation(); changeScore(5, -1)">-</button>
+      </div>
+    </div>
+    <div class="team" id="team6" onclick="resetScore(6)">
+      <span class="team-name" id="teamName6">6모둠</span>
+      <span id="score6" class="score">0</span>
+      <div class="button-container">
+        <button onclick="event.stopPropagation(); changeScore(6, 1)">+</button>
+        <button onclick="event.stopPropagation(); changeScore(6, -1)">-</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 제목 설정 모달 -->
+  <div id="titleModal" class="modal">
+    <div class="modal-content">
+      <h2>제목 설정</h2>
+      <label for="titleFontSize">제목 폰트 사이즈 (rem)</label>
+      <input type="range" id="titleFontSize" min="2" max="10" step="0.5" value="5" oninput="updateTitleFontSize(this.value)" />
+      <div class="range-display">현재: <span id="titleFontSizeDisplay">5</span> rem</div>
+      <label for="titleColor">제목 색상</label>
+      <input type="color" id="titleColor" value="#ffffff" oninput="updateTitleColor(this.value)" />
+      <div class="btn-group">
+        <button class="close-btn" onclick="closeModal('titleModal')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 배경 설정 모달 -->
+  <div id="bgModal" class="modal">
+    <div class="modal-content">
+      <h2>배경 설정</h2>
+      <label for="bgColor">배경 색상</label>
+      <input type="color" id="bgColor" value="#000000" oninput="updateBgColor(this.value)" />
+      <div class="btn-group">
+        <button class="close-btn" onclick="closeModal('bgModal')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 모둠명 설정 모달 -->
+  <div id="teamModal" class="modal">
+    <div class="modal-content">
+      <h2>모둠명 설정</h2>
+      <label for="teamNameFontSize">모둠명 폰트 사이즈 (rem)</label>
+      <input type="range" id="teamNameFontSize" min="1" max="5" step="0.1" value="2.5" oninput="updateTeamNameFontSize(this.value)" />
+      <div class="range-display">현재: <span id="teamNameFontSizeDisplay">2.5</span> rem</div>
+      <label for="teamNameColor">모둠명 글씨 색상</label>
+      <input type="color" id="teamNameColor" value="#ffffff" oninput="updateTeamNameColor(this.value)" />
+      <label>모둠 이름 변경</label>
+      <input type="text" id="newTeamName1" placeholder="1모둠" value="1모둠" oninput="updateTeamName(1, this.value)" />
+      <input type="text" id="newTeamName2" placeholder="2모둠" value="2모둠" oninput="updateTeamName(2, this.value)" />
+      <input type="text" id="newTeamName3" placeholder="3모둠" value="3모둠" oninput="updateTeamName(3, this.value)" />
+      <input type="text" id="newTeamName4" placeholder="4모둠" value="4모둠" oninput="updateTeamName(4, this.value)" />
+      <input type="text" id="newTeamName5" placeholder="5모둠" value="5모둠" oninput="updateTeamName(5, this.value)" />
+      <input type="text" id="newTeamName6" placeholder="6모둠" value="6모둠" oninput="updateTeamName(6, this.value)" />
+      <div class="btn-group">
+        <button class="close-btn" onclick="closeModal('teamModal')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 점수 설정 모달 (실시간 업데이트 적용) -->
+  <div id="scoreModal" class="modal">
+    <div class="modal-content">
+      <h2>점수 설정</h2>
+      <label for="scoreFontSize">점수 폰트 사이즈 (rem)</label>
+      <input type="range" id="scoreFontSize" min="1" max="15" step="1" value="10" oninput="updateScoreFontSize(this.value)" />
+      <div class="range-display">현재: <span id="scoreFontSizeDisplay">10</span> rem</div>
+      <label for="scoreColor">점수 색상</label>
+      <input type="color" id="scoreColor" value="#ffffff" oninput="updateScoreColor(this.value)" />
+      <div class="btn-group">
+        <button class="close-btn" onclick="closeModal('scoreModal')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 데이터 내보내기 모달 -->
+  <div id="exportModal" class="modal">
+    <div class="modal-content">
+      <h2>내보내기</h2>
+      <label>설정 데이터 (JSON)</label>
+      <textarea id="exportData" rows="8" readonly style="resize: none;"></textarea>
+      <div class="btn-group">
+        <button class="close-btn" onclick="closeModal('exportModal')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 데이터 불러오기 모달 -->
+  <div id="importModal" class="modal">
+    <div class="modal-content">
+      <h2>불러오기</h2>
+      <label>JSON 데이터를 입력하세요</label>
+      <textarea id="importData" rows="8" style="resize: none;"></textarea>
+      <div class="btn-group">
+        <button class="close-btn" onclick="applyImport()">적용</button>
+        <button class="close-btn" onclick="closeModal('importModal')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ========== 설정 저장/불러오기 함수 ========== */
+    function saveSettings() {
+      // 각 영역의 값을 객체로 구성
+      const settings = {
+        title: {
+          fontSize: document.getElementById('titleFontSize').value,
+          color: document.getElementById('titleColor').value,
+          text: document.getElementById('title').innerText
+        },
+        bg: {
+          color: document.getElementById('bgColor').value
+        },
+        team: {
+          nameFontSize: document.getElementById('teamNameFontSize').value,
+          nameColor: document.getElementById('teamNameColor').value,
+          names: [
+            document.getElementById('newTeamName1').value,
+            document.getElementById('newTeamName2').value,
+            document.getElementById('newTeamName3').value,
+            document.getElementById('newTeamName4').value,
+            document.getElementById('newTeamName5').value,
+            document.getElementById('newTeamName6').value
+          ]
+        },
+        score: {
+          fontSize: document.getElementById('scoreFontSize').value,
+          color: document.getElementById('scoreColor').value,
+          values: {
+            1: document.getElementById('score1').innerText,
+            2: document.getElementById('score2').innerText,
+            3: document.getElementById('score3').innerText,
+            4: document.getElementById('score4').innerText,
+            5: document.getElementById('score5').innerText,
+            6: document.getElementById('score6').innerText
+          }
+        }
+      };
+      localStorage.setItem('scoreSettings', JSON.stringify(settings));
+    }
+
+    function loadSettings() {
+      const settingsStr = localStorage.getItem('scoreSettings');
+      if (!settingsStr) return;
+      const settings = JSON.parse(settingsStr);
+      // 제목 설정
+      document.getElementById('titleFontSize').value = settings.title.fontSize;
+      document.getElementById('titleFontSizeDisplay').innerText = settings.title.fontSize;
+      updateTitleFontSize(settings.title.fontSize);
+      document.getElementById('titleColor').value = settings.title.color;
+      updateTitleColor(settings.title.color);
+      document.getElementById('title').innerText = settings.title.text || "모둠 점수";
+      // 배경 설정
+      document.getElementById('bgColor').value = settings.bg.color;
+      updateBgColor(settings.bg.color);
+      // 모둠명 설정
+      document.getElementById('teamNameFontSize').value = settings.team.nameFontSize;
+      document.getElementById('teamNameFontSizeDisplay').innerText = settings.team.nameFontSize;
+      updateTeamNameFontSize(settings.team.nameFontSize);
+      document.getElementById('teamNameColor').value = settings.team.nameColor;
+      updateTeamNameColor(settings.team.nameColor);
+      // 각 모둠 이름
+      const names = settings.team.names;
+      for (let i = 1; i <= 6; i++) {
+        document.getElementById('newTeamName' + i).value = names[i - 1];
+        updateTeamName(i, names[i - 1]);
+      }
+      // 점수 설정
+      document.getElementById('scoreFontSize').value = settings.score.fontSize;
+      document.getElementById('scoreFontSizeDisplay').innerText = settings.score.fontSize;
+      updateScoreFontSize(settings.score.fontSize);
+      document.getElementById('scoreColor').value = settings.score.color;
+      updateScoreColor(settings.score.color);
+      // 각 모둠 점수 복원
+      const scoreValues = settings.score.values;
+      for(let team in scoreValues) {
+        document.getElementById('score' + team).innerText = scoreValues[team];
+      }
+    }
+
+    /* ========== 실시간 업데이트 함수들 (업데이트 후 저장) ========== */
+    function updateTitleFontSize(value) {
+      document.getElementById('title').style.fontSize = value + "rem";
+      document.getElementById('titleFontSizeDisplay').innerText = value;
+      saveSettings();
+    }
+    function updateTitleColor(value) {
+      document.getElementById('title').style.color = value;
+      saveSettings();
+    }
+    function updateBgColor(value) {
+      document.body.style.backgroundColor = value;
+      saveSettings();
+    }
+    function updateTeamNameFontSize(value) {
+      document.querySelectorAll('.team-name').forEach(el => {
+        el.style.fontSize = value + "rem";
+      });
+      document.getElementById('teamNameFontSizeDisplay').innerText = value;
+      saveSettings();
+    }
+    function updateTeamNameColor(value) {
+      document.querySelectorAll('.team-name').forEach(el => {
+        el.style.color = value;
+      });
+      saveSettings();
+    }
+    function updateTeamName(team, value) {
+      document.getElementById('teamName' + team).innerText = value;
+      saveSettings();
+    }
+    function updateScoreFontSize(value) {
+      document.querySelectorAll('.score').forEach(el => {
+        el.style.fontSize = value + "rem";
+      });
+      document.getElementById('scoreFontSizeDisplay').innerText = value;
+      saveSettings();
+    }
+    function updateScoreColor(value) {
+      document.querySelectorAll('.score').forEach(el => {
+        el.style.color = value;
+      });
+      saveSettings();
+    }
+
+    /* ========== 점수 관련 함수 (변경 시 저장) ========== */
+    const keyBindings = {
+      '/': [1, 1], '8': [1, -1],
+      '*': [2, 1], '9': [2, -1],
+      'Backspace': [3, 1], '-': [3, -1],
+      '5': [4, 1], '2': [4, -1],
+      '6': [5, 1], '3': [5, -1],
+      '+': [6, 1], 'Enter': [6, -1]
+    };
+    document.addEventListener('keydown', (event) => {
+      if (keyBindings[event.key]) {
+        let [team, change] = keyBindings[event.key];
+        changeScore(team, change);
+      }
+    });
+    function changeScore(team, change) {
+      let scoreEl = document.getElementById(`score${team}`);
+      let currentScore = parseInt(scoreEl.innerText);
+      scoreEl.innerText = currentScore + change;
+      saveSettings();
+    }
+    function resetScore(team) {
+      document.getElementById(`score${team}`).innerText = 0;
+      saveSettings();
+    }
+
+    /* ========== 모달 열기/닫기 ========== */
+    function openModal(modalId) {
+      document.getElementById(modalId).style.display = 'block';
+      if (modalId === 'exportModal') {
+        // 내보내기 모달 열 때 현재 저장된 설정을 JSON 문자열로 표시
+        const settingsStr = localStorage.getItem('scoreSettings') || "{}";
+        document.getElementById('exportData').value = settingsStr;
+      }
+    }
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+
+    /* ========== 데이터 불러오기 (import) ========== */
+    function applyImport() {
+      try {
+        const data = JSON.parse(document.getElementById('importData').value);
+        // 저장된 데이터를 localStorage에 저장하고 재적용
+        localStorage.setItem('scoreSettings', JSON.stringify(data));
+        loadSettings();
+        closeModal('importModal');
+      } catch (e) {
+        alert("유효한 JSON이 아닙니다.");
+      }
+    }
+
+    /* ========== 모달 외부 클릭시 닫힘 ========== */
+    window.addEventListener('click', function(event) {
+      const modals = document.querySelectorAll('.modal');
+      modals.forEach(modal => {
+        if (event.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+    });
+
+    // 페이지 로딩 시 저장된 설정과 점수 불러오기
+    window.addEventListener('load', loadSettings);
+  </script>
+</body>
+</html>
