@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>반응형 앱 - 설정 및 날짜 효과 포함</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background-color: #fff;
+      color: #000;
+    }
+    /* 화면 전체를 채우는 컨테이너, 중앙 정렬 */
+    .container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    /* 각 줄, 기본 글씨 크기는 24vh, nowrap, 글씨 굵기는 변수로 지정 */
+    .line {
+      margin: 10px 0;
+      white-space: nowrap;
+      font-size: var(--line-font-size, 24vh);
+      font-weight: var(--line-font-weight, normal);
+    }
+    /* 설정 버튼: 왼쪽 상단에 위치 */
+    #settingsToggle {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: #008CBA;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 101;
+    }
+    /* 설정 패널: 설정 버튼 바로 아래에 위치 */
+    #settingsPanel {
+      position: fixed;
+      top: 50px;
+      left: 10px;
+      background: #f0f0f0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      z-index: 100;
+      display: none;
+    }
+    #settingsPanel label {
+      margin-right: 5px;
+    }
+    /* 클릭 가능한 날짜 부분 */
+    .clickable {
+      color: blue;
+      cursor: pointer;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- 설정 버튼 -->
+  <button id="settingsToggle" onclick="toggleSettings()">설정</button>
+  <!-- 설정 패널 -->
+  <div id="settingsPanel">
+    <div>
+      <label for="textColorPicker">글자 색상:</label>
+      <input type="color" id="textColorPicker" value="#000000">
+    </div>
+    <div>
+      <label for="bgColorPicker">배경 색상:</label>
+      <input type="color" id="bgColorPicker" value="#ffffff">
+    </div>
+    <div>
+      <label for="fontSizeRange">글씨 크기 (vh):</label>
+      <input type="range" id="fontSizeRange" min="10" max="50" value="24">
+      <span id="fontSizeValue">24</span>
+    </div>
+    <div>
+      <label for="boldCheckbox">볼드:</label>
+      <input type="checkbox" id="boldCheckbox">
+    </div>
+  </div>
+  
+  <div class="container" id="mainContainer">
+    <!-- 날짜 줄: 항상 오늘 날짜를 보여주며 클릭 시 숫자 변경과 날짜 색 복원 -->
+    <div class="line" id="date">
+      <span id="month" class="clickable" onclick="rotateDescending(); resetDateColor();">0</span>월 
+      <span id="day" class="clickable" onclick="rotateAscending(); resetDateColor();">0</span>일
+    </div>
+    <!-- 오늘의 번호 줄 -->
+    <div class="line" id="todayNumber">오늘의 번호: <span id="todayNumValue">3</span></div>
+    <!-- 급식 당번 줄 -->
+    <div class="line" id="duty">급식 당번: <span id="dutyNumValue">5</span></div>
+  </div>
+
+  <script>
+    // 초기 숫자값 (예시)
+    let todayNumber = 3;  // 1~4
+    let dutyNumber = 5;   // 1~6
+
+    // 날짜 관련 변수: 현재 날짜 저장
+    let currentDate = new Date().getDate();
+
+    // 기본 설정값 (로컬 저장 우선)
+    let defaultFontSize = localStorage.getItem("fontSize") || 24;
+    let defaultTextColor = localStorage.getItem("textColor") || "#000000";
+    let defaultBgColor = localStorage.getItem("bgColor") || "#ffffff";
+    let defaultBold = localStorage.getItem("bold") === "true";
+
+    // 설정 적용
+    document.body.style.color = defaultTextColor;
+    document.body.style.backgroundColor = defaultBgColor;
+    document.documentElement.style.setProperty('--line-font-size', defaultFontSize + "vh");
+    document.documentElement.style.setProperty('--line-font-weight', defaultBold ? 'bold' : 'normal');
+    document.getElementById("textColorPicker").value = defaultTextColor;
+    document.getElementById("bgColorPicker").value = defaultBgColor;
+    document.getElementById("fontSizeRange").value = defaultFontSize;
+    document.getElementById("fontSizeValue").innerText = defaultFontSize;
+    document.getElementById("boldCheckbox").checked = defaultBold;
+
+    // 날짜 표시 함수 (항상 현재 날짜 표시)
+    function updateDateDisplay() {
+      const now = new Date();
+      document.getElementById("month").innerText = now.getMonth() + 1;
+      document.getElementById("day").innerText = now.getDate();
+    }
+    updateDateDisplay();
+
+    // 화면 업데이트 함수 (숫자 업데이트)
+    function updateDisplay() {
+      document.getElementById("todayNumValue").innerText = todayNumber;
+      document.getElementById("dutyNumValue").innerText = dutyNumber;
+    }
+
+    // '일' 클릭: 숫자 증가 (순환)
+    function rotateAscending() {
+      todayNumber = todayNumber < 4 ? todayNumber + 1 : 1;
+      dutyNumber = dutyNumber < 6 ? dutyNumber + 1 : 1;
+      updateDisplay();
+    }
+
+    // '월' 클릭: 숫자 감소 (순환)
+    function rotateDescending() {
+      todayNumber = todayNumber > 1 ? todayNumber - 1 : 4;
+      dutyNumber = dutyNumber > 1 ? dutyNumber - 1 : 6;
+      updateDisplay();
+    }
+
+    // 설정 패널 토글
+    function toggleSettings() {
+      const panel = document.getElementById("settingsPanel");
+      panel.style.display = panel.style.display === "none" ? "block" : "none";
+    }
+
+    // 글자 색상 변경 및 로컬 저장
+    document.getElementById("textColorPicker").addEventListener("input", function() {
+      const color = this.value;
+      document.body.style.color = color;
+      localStorage.setItem("textColor", color);
+      resetDateColor();
+    });
+
+    // 배경 색상 변경 및 로컬 저장
+    document.getElementById("bgColorPicker").addEventListener("input", function() {
+      const color = this.value;
+      document.body.style.backgroundColor = color;
+      localStorage.setItem("bgColor", color);
+    });
+
+    // 글씨 크기 변경 및 로컬 저장
+    document.getElementById("fontSizeRange").addEventListener("input", function() {
+      const size = this.value;
+      document.documentElement.style.setProperty('--line-font-size', size + "vh");
+      document.getElementById("fontSizeValue").innerText = size;
+      localStorage.setItem("fontSize", size);
+    });
+
+    // 볼드 설정 변경 및 로컬 저장
+    document.getElementById("boldCheckbox").addEventListener("change", function() {
+      const isBold = this.checked;
+      document.documentElement.style.setProperty('--line-font-weight', isBold ? 'bold' : 'normal');
+      localStorage.setItem("bold", isBold);
+    });
+
+    // 날짜 색상을 원래의 텍스트 색상으로 복원
+    function resetDateColor() {
+      const defaultColor = localStorage.getItem("textColor") || "#000000";
+      document.getElementById("month").style.color = defaultColor;
+      document.getElementById("day").style.color = defaultColor;
+    }
+
+    // 매 분마다 날짜 변경 확인: 자정이 넘어가면 날짜 색상을 빨강으로 변경하고 날짜 업데이트
+    setInterval(() => {
+      const now = new Date();
+      if (now.getDate() !== currentDate) {
+        currentDate = now.getDate();
+        updateDateDisplay();
+        document.getElementById("month").style.color = "red";
+        document.getElementById("day").style.color = "red";
+      }
+    }, 60000);
+
+    updateDisplay();
+  </script>
+</body>
+</html>
