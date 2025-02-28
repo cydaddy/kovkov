@@ -74,7 +74,7 @@
       justify-content: center;
     }
     .score {
-      font-size: 10rem;
+      font-size: 15rem; /* 기본값 15rem (슬라이더 값과 동기화) */
       margin: 20px;
       color: #ffffff;
       line-height: 1;
@@ -164,7 +164,7 @@
     /* 반응형 조정 */
     @media (max-width: 600px) {
       .score {
-        font-size: 6rem;
+        font-size: 8rem;
       }
       h1 {
         font-size: 3rem;
@@ -254,10 +254,12 @@
     </div>
   </div>
 
-  <!-- 제목 설정 모달 -->
+  <!-- 제목 설정 모달 (제목 토글 추가) -->
   <div id="titleModal" class="modal">
     <div class="modal-content">
       <h2>제목 설정</h2>
+      <label for="titleToggle">제목 표시</label>
+      <input type="checkbox" id="titleToggle" onchange="updateTitleToggle(this.checked)" checked />
       <label for="titleFontSize">제목 폰트 사이즈 (rem)</label>
       <input type="range" id="titleFontSize" min="2" max="10" step="0.5" value="5" oninput="updateTitleFontSize(this.value)" />
       <div class="range-display">현재: <span id="titleFontSizeDisplay">5</span> rem</div>
@@ -303,13 +305,16 @@
     </div>
   </div>
 
-  <!-- 점수 설정 모달 -->
+  <!-- 점수 설정 모달 (폰트 사이즈, 여백 조절 추가) -->
   <div id="scoreModal" class="modal">
     <div class="modal-content">
       <h2>점수 설정</h2>
       <label for="scoreFontSize">점수 폰트 사이즈 (rem)</label>
-      <input type="range" id="scoreFontSize" min="1" max="15" step="1" value="10" oninput="updateScoreFontSize(this.value)" />
-      <div class="range-display">현재: <span id="scoreFontSizeDisplay">10</span> rem</div>
+      <input type="range" id="scoreFontSize" min="1" max="20" step="1" value="15" oninput="updateScoreFontSize(this.value)" />
+      <div class="range-display">현재: <span id="scoreFontSizeDisplay">15</span> rem</div>
+      <label for="scoreMargin">점수 여백 (px)</label>
+      <input type="range" id="scoreMargin" min="0" max="50" step="1" value="20" oninput="updateScoreMargin(this.value)" />
+      <div class="range-display">현재: <span id="scoreMarginDisplay">20</span> px</div>
       <label for="scoreColor">점수 색상</label>
       <input type="color" id="scoreColor" value="#ffffff" oninput="updateScoreColor(this.value)" />
       <div class="btn-group">
@@ -350,7 +355,8 @@
         title: {
           fontSize: document.getElementById('titleFontSize').value,
           color: document.getElementById('titleColor').value,
-          text: document.getElementById('title').innerText
+          text: document.getElementById('title').innerText,
+          visible: document.getElementById('titleToggle').checked
         },
         bg: { color: document.getElementById('bgColor').value },
         team: {
@@ -367,6 +373,7 @@
         },
         score: {
           fontSize: document.getElementById('scoreFontSize').value,
+          margin: document.getElementById('scoreMargin').value,
           color: document.getElementById('scoreColor').value,
           values: {
             1: document.getElementById('score1').innerText,
@@ -384,14 +391,22 @@
       const settingsStr = localStorage.getItem('scoreSettings');
       if (!settingsStr) return;
       const settings = JSON.parse(settingsStr);
+      
+      // 제목 설정 불러오기
       document.getElementById('titleFontSize').value = settings.title.fontSize;
       document.getElementById('titleFontSizeDisplay').innerText = settings.title.fontSize;
       updateTitleFontSize(settings.title.fontSize);
       document.getElementById('titleColor').value = settings.title.color;
       updateTitleColor(settings.title.color);
       document.getElementById('title').innerText = settings.title.text || "모둠 점수";
+      document.getElementById('titleToggle').checked = settings.title.visible;
+      updateTitleToggle(settings.title.visible);
+      
+      // 배경 설정 불러오기
       document.getElementById('bgColor').value = settings.bg.color;
       updateBgColor(settings.bg.color);
+      
+      // 모둠명 설정 불러오기
       document.getElementById('teamNameFontSize').value = settings.team.nameFontSize;
       document.getElementById('teamNameFontSizeDisplay').innerText = settings.team.nameFontSize;
       updateTeamNameFontSize(settings.team.nameFontSize);
@@ -402,9 +417,14 @@
         document.getElementById('newTeamName' + i).value = names[i - 1];
         updateTeamName(i, names[i - 1]);
       }
+      
+      // 점수 설정 불러오기
       document.getElementById('scoreFontSize').value = settings.score.fontSize;
       document.getElementById('scoreFontSizeDisplay').innerText = settings.score.fontSize;
       updateScoreFontSize(settings.score.fontSize);
+      document.getElementById('scoreMargin').value = settings.score.margin;
+      document.getElementById('scoreMarginDisplay').innerText = settings.score.margin;
+      updateScoreMargin(settings.score.margin);
       document.getElementById('scoreColor').value = settings.score.color;
       updateScoreColor(settings.score.color);
       const scoreValues = settings.score.values;
@@ -412,6 +432,7 @@
         document.getElementById('score' + team).innerText = scoreValues[team];
       }
     }
+    /* ========== 제목 설정 함수들 ========== */
     function updateTitleFontSize(value) {
       document.getElementById('title').style.fontSize = value + "rem";
       document.getElementById('titleFontSizeDisplay').innerText = value;
@@ -421,10 +442,16 @@
       document.getElementById('title').style.color = value;
       saveSettings();
     }
+    function updateTitleToggle(visible) {
+      document.getElementById('title').style.display = visible ? "block" : "none";
+      saveSettings();
+    }
+    /* ========== 배경 설정 ========== */
     function updateBgColor(value) {
       document.body.style.backgroundColor = value;
       saveSettings();
     }
+    /* ========== 모둠명 설정 함수들 ========== */
     function updateTeamNameFontSize(value) {
       document.querySelectorAll('.team-name').forEach(el => {
         el.style.fontSize = value + "rem";
@@ -442,11 +469,19 @@
       document.getElementById('teamName' + team).innerText = value;
       saveSettings();
     }
+    /* ========== 점수 설정 함수들 ========== */
     function updateScoreFontSize(value) {
       document.querySelectorAll('.score').forEach(el => {
         el.style.fontSize = value + "rem";
       });
       document.getElementById('scoreFontSizeDisplay').innerText = value;
+      saveSettings();
+    }
+    function updateScoreMargin(value) {
+      document.querySelectorAll('.score').forEach(el => {
+        el.style.margin = value + "px";
+      });
+      document.getElementById('scoreMarginDisplay').innerText = value;
       saveSettings();
     }
     function updateScoreColor(value) {
@@ -455,6 +490,7 @@
       });
       saveSettings();
     }
+    /* ========== 키보드 입력 및 점수 변경 함수 ========== */
     const keyBindings = {
       'q': [1, 1],
       'w': [2, 1],
@@ -486,6 +522,7 @@
       document.getElementById(`score${team}`).innerText = 0;
       saveSettings();
     }
+    /* ========== 모달 열기/닫기, 데이터 내보내기/불러오기 ========== */
     function openModal(modalId) {
       document.getElementById(modalId).style.display = 'block';
       if (modalId === 'exportModal') {
