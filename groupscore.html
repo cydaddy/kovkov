@@ -8,6 +8,7 @@
     html, body {
       height: 100%;
       margin: 0;
+      overflow-x: hidden;
     }
     body {
       font-family: Arial, sans-serif;
@@ -38,12 +39,13 @@
       font-size: 5rem;
       text-align: center;
       margin: 60px 0 20px;
+      word-break: break-all;
     }
     .container {
       flex: 1;
       width: 100%;
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 10px;
       padding: 10px;
       box-sizing: border-box;
@@ -64,18 +66,26 @@
       margin-bottom: 10px;
       color: #ffffff;
     }
+    /* 점수와 버튼을 담는 컨테이너 */
+    .score-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .score {
       font-size: 10rem;
-      margin: 20px 0;
+      margin: 20px;
       color: #ffffff;
+      line-height: 1;
     }
-    .button-container {
+    /* 오른쪽에 세로로 배치된 버튼 그룹 */
+    .vertical-buttons {
       display: flex;
+      flex-direction: column;
       justify-content: center;
       gap: 10px;
-      width: 100%;
     }
-    .button-container button {
+    .vertical-buttons button {
       font-size: 2rem;
       padding: 10px 15px;
       cursor: pointer;
@@ -84,8 +94,8 @@
       color: black;
       font-weight: bold;
       border-radius: 10px;
-      flex: 1;
-      max-width: 80px;
+      width: 60px;
+      height: 60px;
     }
     /* 모달창 기본 스타일 */
     .modal {
@@ -150,13 +160,18 @@
       background-color: #555;
       color: white;
     }
-    /* 반응형 */
+    /* 반응형 조정 */
     @media (max-width: 600px) {
       .score {
         font-size: 6rem;
       }
       h1 {
         font-size: 3rem;
+      }
+      .vertical-buttons button {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
       }
     }
   </style>
@@ -174,52 +189,65 @@
 
   <h1 id="title">모둠 점수</h1>
   <div class="container">
+    <!-- 각 팀의 카드 -->
     <div class="team" id="team1" onclick="resetScore(1)">
       <span class="team-name" id="teamName1">1모둠</span>
-      <span id="score1" class="score">0</span>
-      <div class="button-container">
-        <button onclick="event.stopPropagation(); changeScore(1, 1)">+</button>
-        <button onclick="event.stopPropagation(); changeScore(1, -1)">-</button>
+      <div class="score-wrapper">
+        <span id="score1" class="score">0</span>
+        <div class="vertical-buttons">
+          <button onclick="event.stopPropagation(); changeScore(1, 1)">+</button>
+          <button onclick="event.stopPropagation(); changeScore(1, -1)">-</button>
+        </div>
       </div>
     </div>
     <div class="team" id="team2" onclick="resetScore(2)">
       <span class="team-name" id="teamName2">2모둠</span>
-      <span id="score2" class="score">0</span>
-      <div class="button-container">
-        <button onclick="event.stopPropagation(); changeScore(2, 1)">+</button>
-        <button onclick="event.stopPropagation(); changeScore(2, -1)">-</button>
+      <div class="score-wrapper">
+        <span id="score2" class="score">0</span>
+        <div class="vertical-buttons">
+          <button onclick="event.stopPropagation(); changeScore(2, 1)">+</button>
+          <button onclick="event.stopPropagation(); changeScore(2, -1)">-</button>
+        </div>
       </div>
     </div>
     <div class="team" id="team3" onclick="resetScore(3)">
       <span class="team-name" id="teamName3">3모둠</span>
-      <span id="score3" class="score">0</span>
-      <div class="button-container">
-        <button onclick="event.stopPropagation(); changeScore(3, 1)">+</button>
-        <button onclick="event.stopPropagation(); changeScore(3, -1)">-</button>
+      <div class="score-wrapper">
+        <span id="score3" class="score">0</span>
+        <div class="vertical-buttons">
+          <button onclick="event.stopPropagation(); changeScore(3, 1)">+</button>
+          <button onclick="event.stopPropagation(); changeScore(3, -1)">-</button>
+        </div>
       </div>
     </div>
     <div class="team" id="team4" onclick="resetScore(4)">
       <span class="team-name" id="teamName4">4모둠</span>
-      <span id="score4" class="score">0</span>
-      <div class="button-container">
-        <button onclick="event.stopPropagation(); changeScore(4, 1)">+</button>
-        <button onclick="event.stopPropagation(); changeScore(4, -1)">-</button>
+      <div class="score-wrapper">
+        <span id="score4" class="score">0</span>
+        <div class="vertical-buttons">
+          <button onclick="event.stopPropagation(); changeScore(4, 1)">+</button>
+          <button onclick="event.stopPropagation(); changeScore(4, -1)">-</button>
+        </div>
       </div>
     </div>
     <div class="team" id="team5" onclick="resetScore(5)">
       <span class="team-name" id="teamName5">5모둠</span>
-      <span id="score5" class="score">0</span>
-      <div class="button-container">
-        <button onclick="event.stopPropagation(); changeScore(5, 1)">+</button>
-        <button onclick="event.stopPropagation(); changeScore(5, -1)">-</button>
+      <div class="score-wrapper">
+        <span id="score5" class="score">0</span>
+        <div class="vertical-buttons">
+          <button onclick="event.stopPropagation(); changeScore(5, 1)">+</button>
+          <button onclick="event.stopPropagation(); changeScore(5, -1)">-</button>
+        </div>
       </div>
     </div>
     <div class="team" id="team6" onclick="resetScore(6)">
       <span class="team-name" id="teamName6">6모둠</span>
-      <span id="score6" class="score">0</span>
-      <div class="button-container">
-        <button onclick="event.stopPropagation(); changeScore(6, 1)">+</button>
-        <button onclick="event.stopPropagation(); changeScore(6, -1)">-</button>
+      <div class="score-wrapper">
+        <span id="score6" class="score">0</span>
+        <div class="vertical-buttons">
+          <button onclick="event.stopPropagation(); changeScore(6, 1)">+</button>
+          <button onclick="event.stopPropagation(); changeScore(6, -1)">-</button>
+        </div>
       </div>
     </div>
   </div>
@@ -440,16 +468,23 @@
 
     /* ========== 점수 관련 함수 (변경 시 저장) ========== */
     const keyBindings = {
-      '/': [1, 1], '8': [1, -1],
-      '*': [2, 1], '9': [2, -1],
-      'Backspace': [3, 1], '-': [3, -1],
-      '5': [4, 1], '2': [4, -1],
-      '6': [5, 1], '3': [5, -1],
-      '+': [6, 1], 'Enter': [6, -1]
+      'q': [1, 1],
+      'w': [2, 1],
+      'e': [3, 1],
+      'r': [4, 1],
+      't': [5, 1],
+      'y': [6, 1],
+      'a': [1, -1],
+      's': [2, -1],
+      'd': [3, -1],
+      'f': [4, -1],
+      'g': [5, -1],
+      'h': [6, -1]
     };
     document.addEventListener('keydown', (event) => {
-      if (keyBindings[event.key]) {
-        let [team, change] = keyBindings[event.key];
+      let key = event.key.toLowerCase();
+      if (keyBindings[key]) {
+        let [team, change] = keyBindings[key];
         changeScore(team, change);
       }
     });
