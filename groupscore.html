@@ -35,13 +35,26 @@
       border-radius: 5px;
       cursor: pointer;
     }
+    /* 상단 메뉴 토글 버튼 (우측 상단) */
+    #menuToggleBtn {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 1001;
+      font-size: 1rem;
+      padding: 6px 10px;
+      background-color: #444;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
     h1 {
       font-size: 5rem;
       text-align: center;
       margin: 60px 0 20px;
       word-break: break-all;
     }
-    /* 컨테이너 좌우 가득 차게 수정 */
     .container {
       flex: 1;
       width: 100%;
@@ -67,19 +80,18 @@
       margin-bottom: 10px;
       color: #ffffff;
     }
-    /* 점수와 버튼 컨테이너 */
     .score-wrapper {
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .score {
-      font-size: 15rem; /* 기본값 15rem (슬라이더 값과 동기화) */
+      font-size: 15rem;
       margin: 20px;
       color: #ffffff;
       line-height: 1;
     }
-    /* 오른쪽에 세로로 배치된 버튼 그룹 */
+    /* 터치 영역 확장을 위한 +, - 버튼 스타일 */
     .vertical-buttons {
       display: flex;
       flex-direction: column;
@@ -88,17 +100,18 @@
     }
     .vertical-buttons button {
       font-size: 2rem;
-      padding: 10px 15px;
+      padding: 10px;
       cursor: pointer;
       border: none;
       background-color: yellow;
       color: black;
       font-weight: bold;
       border-radius: 10px;
-      width: 60px;
-      height: 60px;
+      width: 80px;  /* 기본 크기 */
+      height: 80px; /* 기본 크기 */
+      touch-action: manipulation;
     }
-    /* 모달창 기본 스타일 */
+    /* 모달 기본 스타일 */
     .modal {
       display: none;
       position: fixed;
@@ -170,8 +183,8 @@
         font-size: 3rem;
       }
       .vertical-buttons button {
-        width: 50px;
-        height: 50px;
+        width: 60px;
+        height: 60px;
         font-size: 1.5rem;
       }
     }
@@ -187,6 +200,9 @@
     <button onclick="openModal('exportModal')">데이터 내보내기</button>
     <button onclick="openModal('importModal')">데이터 불러오기</button>
   </div>
+
+  <!-- 상단 메뉴 토글 버튼 (F2 단축키 포함) -->
+  <button id="menuToggleBtn" onclick="toggleMenuBar()">메뉴 (F2)</button>
 
   <h1 id="title">모둠 점수</h1>
   <div class="container">
@@ -254,7 +270,7 @@
     </div>
   </div>
 
-  <!-- 제목 설정 모달 (제목 토글 추가) -->
+  <!-- 제목 설정 모달 -->
   <div id="titleModal" class="modal">
     <div class="modal-content">
       <h2>제목 설정</h2>
@@ -305,18 +321,30 @@
     </div>
   </div>
 
-  <!-- 점수 설정 모달 (폰트 사이즈, 여백 조절 추가) -->
+  <!-- 점수 설정 모달 -->
   <div id="scoreModal" class="modal">
     <div class="modal-content">
       <h2>점수 설정</h2>
       <label for="scoreFontSize">점수 폰트 사이즈 (rem)</label>
       <input type="range" id="scoreFontSize" min="1" max="20" step="1" value="15" oninput="updateScoreFontSize(this.value)" />
       <div class="range-display">현재: <span id="scoreFontSizeDisplay">15</span> rem</div>
+     
       <label for="scoreMargin">점수 여백 (px)</label>
       <input type="range" id="scoreMargin" min="0" max="50" step="1" value="20" oninput="updateScoreMargin(this.value)" />
       <div class="range-display">현재: <span id="scoreMarginDisplay">20</span> px</div>
+     
       <label for="scoreColor">점수 색상</label>
       <input type="color" id="scoreColor" value="#ffffff" oninput="updateScoreColor(this.value)" />
+     
+      <!-- 추가: 점수 버튼 크기 슬라이드 -->
+      <label for="scoreButtonSize">점수 버튼 크기 (px)</label>
+      <input type="range" id="scoreButtonSize" min="40" max="120" step="5" value="80" oninput="updateScoreButtonSize(this.value)" />
+      <div class="range-display">현재: <span id="scoreButtonSizeDisplay">80</span> px</div>
+     
+      <!-- 추가: 점수 버튼 토글 체크박스 -->
+      <label for="scoreButtonToggle">점수 버튼 표시</label>
+      <input type="checkbox" id="scoreButtonToggle" onchange="updateScoreButtonToggle(this.checked)" checked />
+     
       <div class="btn-group">
         <button class="close-btn" onclick="closeModal('scoreModal')">닫기</button>
       </div>
@@ -382,7 +410,9 @@
             4: document.getElementById('score4').innerText,
             5: document.getElementById('score5').innerText,
             6: document.getElementById('score6').innerText
-          }
+          },
+          buttonSize: document.getElementById('scoreButtonSize').value,
+          buttonVisible: document.getElementById('scoreButtonToggle').checked
         }
       };
       localStorage.setItem('scoreSettings', JSON.stringify(settings));
@@ -391,7 +421,7 @@
       const settingsStr = localStorage.getItem('scoreSettings');
       if (!settingsStr) return;
       const settings = JSON.parse(settingsStr);
-      
+     
       // 제목 설정 불러오기
       document.getElementById('titleFontSize').value = settings.title.fontSize;
       document.getElementById('titleFontSizeDisplay').innerText = settings.title.fontSize;
@@ -401,11 +431,11 @@
       document.getElementById('title').innerText = settings.title.text || "모둠 점수";
       document.getElementById('titleToggle').checked = settings.title.visible;
       updateTitleToggle(settings.title.visible);
-      
+     
       // 배경 설정 불러오기
       document.getElementById('bgColor').value = settings.bg.color;
       updateBgColor(settings.bg.color);
-      
+     
       // 모둠명 설정 불러오기
       document.getElementById('teamNameFontSize').value = settings.team.nameFontSize;
       document.getElementById('teamNameFontSizeDisplay').innerText = settings.team.nameFontSize;
@@ -417,7 +447,7 @@
         document.getElementById('newTeamName' + i).value = names[i - 1];
         updateTeamName(i, names[i - 1]);
       }
-      
+     
       // 점수 설정 불러오기
       document.getElementById('scoreFontSize').value = settings.score.fontSize;
       document.getElementById('scoreFontSizeDisplay').innerText = settings.score.fontSize;
@@ -431,6 +461,13 @@
       for(let team in scoreValues) {
         document.getElementById('score' + team).innerText = scoreValues[team];
       }
+     
+      // 점수 버튼 설정 불러오기
+      document.getElementById('scoreButtonSize').value = settings.score.buttonSize;
+      document.getElementById('scoreButtonSizeDisplay').innerText = settings.score.buttonSize;
+      updateScoreButtonSize(settings.score.buttonSize);
+      document.getElementById('scoreButtonToggle').checked = settings.score.buttonVisible;
+      updateScoreButtonToggle(settings.score.buttonVisible);
     }
     /* ========== 제목 설정 함수들 ========== */
     function updateTitleFontSize(value) {
@@ -490,6 +527,22 @@
       });
       saveSettings();
     }
+    // 점수 버튼 크기를 조절하는 함수 (width, height)
+    function updateScoreButtonSize(value) {
+      document.querySelectorAll('.vertical-buttons button').forEach(btn => {
+        btn.style.width = value + "px";
+        btn.style.height = value + "px";
+      });
+      document.getElementById('scoreButtonSizeDisplay').innerText = value;
+      saveSettings();
+    }
+    // 점수 버튼의 표시 여부 토글 함수
+    function updateScoreButtonToggle(visible) {
+      document.querySelectorAll('.vertical-buttons').forEach(container => {
+        container.style.display = visible ? "flex" : "none";
+      });
+      saveSettings();
+    }
     /* ========== 키보드 입력 및 점수 변경 함수 ========== */
     const keyBindings = {
       'q': [1, 1],
@@ -506,7 +559,17 @@
       'h': [6, -1]
     };
     document.addEventListener('keydown', (event) => {
-      let key = event.key.toLowerCase();
+      // F2 키로 메뉴 토글
+      if (event.key === "F2") {
+        event.preventDefault();
+        toggleMenuBar();
+        return;
+      }
+      let key = event.key;
+      if (key === '+' || key === '-' || key.toLowerCase() === 'add' || key.toLowerCase() === 'subtract') {
+        event.preventDefault();
+      }
+      key = key.toLowerCase();
       if (keyBindings[key]) {
         let [team, change] = keyBindings[key];
         changeScore(team, change);
@@ -552,6 +615,12 @@
       });
     });
     window.addEventListener('load', loadSettings);
+
+    // 상단 메뉴바 보이기/숨기기 함수
+    function toggleMenuBar() {
+      const menuBar = document.querySelector('.settings-buttons');
+      menuBar.style.display = (menuBar.style.display === 'none') ? 'block' : 'none';
+    }
   </script>
 </body>
 </html>
