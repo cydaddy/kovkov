@@ -260,33 +260,32 @@
       document.getElementById("btn3").disabled = !enabled;
     }
 
-  function nextSentence() {
-    if (!answered && count < totalQuestions) {
-      // 정답을 선택하지 않고 넘어간 경우 → 오답 처리
-      document.getElementById("result").textContent = `답하지 않아 틀렸어요. 정답은 [${current.type}]입니다.`;
-      document.getElementById("result").style.color = "orange";
-      count++;
-      document.getElementById("scoreboard").textContent = `점수: ${score} / ${count}`;
-    }
-  
-    if (count >= totalQuestions) {
-      document.getElementById("sentence").textContent = "";
-      document.getElementById("result").textContent = `🎉 게임 종료! 점수는 ${score} / ${totalQuestions}입니다.`;
-      document.getElementById("nextBtn").style.display = "none";
-      document.getElementById("restartBtn").style.display = "inline-block";
-      setButtonsEnabled(false);
-      return;
-    }
-  
-    const index = Math.floor(Math.random() * sentences.length);
-    current = sentences[index];
-    document.getElementById("sentence").textContent = `(${count + 1}번) ${current.text}`;
-    document.getElementById("result").textContent = "";
+function nextSentence() {
+  // 답하지 않고 넘어간 경우: 첫 문제(count === 0)는 예외
+  if (!answered && count > 0 && count < totalQuestions) {
+    document.getElementById("result").textContent = `답하지 않아 틀렸어요. 정답은 [${current.type}]입니다.`;
+    document.getElementById("result").style.color = "orange";
+    count++;
     document.getElementById("scoreboard").textContent = `점수: ${score} / ${count}`;
-    answered = false;
-    setButtonsEnabled(true);
   }
 
+  if (count >= totalQuestions) {
+    document.getElementById("sentence").textContent = "";
+    document.getElementById("result").textContent = `🎉 게임 종료! 점수는 ${score} / ${totalQuestions}입니다.`;
+    document.getElementById("nextBtn").style.display = "none";
+    document.getElementById("restartBtn").style.display = "inline-block";
+    setButtonsEnabled(false);
+    return;
+  }
+
+  const index = Math.floor(Math.random() * sentences.length);
+  current = sentences[index];
+  document.getElementById("sentence").textContent = `(${count + 1}번) ${current.text}`;
+  document.getElementById("result").textContent = "";
+  document.getElementById("scoreboard").textContent = `점수: ${score} / ${count}`;
+  answered = false;
+  setButtonsEnabled(true);
+}
 
     function checkAnswer(answer) {
       if (answered) return; // 이미 정답 확인한 경우 중복 방지
