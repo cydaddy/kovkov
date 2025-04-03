@@ -114,7 +114,9 @@
     let defaultFontSize = localStorage.getItem("fontSize") || 24;
     let defaultTextColor = localStorage.getItem("textColor") || "#000000";
     let defaultBgColor = localStorage.getItem("bgColor") || "#ffffff";
-    let defaultBold = localStorage.getItem("bold") === "true";
+    // localStorage에 bold 설정이 없다면 기본값을 true로 사용
+    let storedBold = localStorage.getItem("bold");
+    let defaultBold = storedBold === null ? true : storedBold === "true";
 
     // 설정 적용
     document.body.style.color = defaultTextColor;
