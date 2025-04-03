@@ -103,9 +103,9 @@
   </div>
 
   <script>
-    // 초기 숫자값 (예시)
-    let todayNumber = 3;  // 1~4
-    let dutyNumber = 5;   // 1~6
+    // 기본 숫자값 (로컬 저장 우선)
+    let todayNumber = parseInt(localStorage.getItem("todayNumber")) || 3;  // 1~4
+    let dutyNumber = parseInt(localStorage.getItem("dutyNumber")) || 5;    // 1~6
 
     // 날짜 관련 변수: 현재 날짜 저장
     let currentDate = new Date().getDate();
@@ -146,6 +146,9 @@
       todayNumber = todayNumber < 4 ? todayNumber + 1 : 1;
       dutyNumber = dutyNumber < 6 ? dutyNumber + 1 : 1;
       updateDisplay();
+      // 변경된 숫자를 저장
+      localStorage.setItem("todayNumber", todayNumber);
+      localStorage.setItem("dutyNumber", dutyNumber);
     }
 
     // '월' 클릭: 숫자 감소 (순환)
@@ -153,6 +156,9 @@
       todayNumber = todayNumber > 1 ? todayNumber - 1 : 4;
       dutyNumber = dutyNumber > 1 ? dutyNumber - 1 : 6;
       updateDisplay();
+      // 변경된 숫자를 저장
+      localStorage.setItem("todayNumber", todayNumber);
+      localStorage.setItem("dutyNumber", dutyNumber);
     }
 
     // 설정 패널 토글
