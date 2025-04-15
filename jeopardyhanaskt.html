@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제퍼디 퀴즈 게임판</title>
+    <style>
+        /* --- CSS Styles (previous version - no changes needed here) --- */
+        html, body { height: 100%; margin: 0; padding: 0; font-family: sans-serif; background-color: #f0f0f0; overflow: hidden; }
+        #gameContainer { display: flex; flex-direction: column; height: 100%; padding: 15px 15px 25px 15px; box-sizing: border-box; }
+        #gameBoard { flex-grow: 1; border-collapse: collapse; table-layout: fixed; width: 100%; }
+        #gameBoard th, #gameBoard td { border: 2px solid black; text-align: center; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; padding: 5px; height: 18vh; transition: background-color 0.3s ease, color 0.3s ease, font-size 0.1s linear, font-weight 0.1s linear, height 0.2s ease; }
+        #gameBoard th.category-header { background-color: #007bff; color: yellow; font-weight: bold; font-size: 50px; white-space: normal; word-break: break-word; cursor: default; height: 12vh; }
+        #gameBoard th.category-header.clickable { cursor: pointer; }
+        #gameBoard th.category-header.clickable:hover { background-color: #0056b3; }
+        .question-cell { background-color: blue; color: yellow; font-size: 60px; font-weight: bold; cursor: pointer; }
+        .question-cell:hover:not(.used) { background-color: #0000CD; }
+        .question-cell.used { background-color: grey; color: #e0e0e0; cursor: pointer; }
+        .question-cell.used:hover { background-color: #777; }
+        #settingsButton { position: fixed; top: 15px; right: 15px; padding: 10px 15px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 1001; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        #settingsButton:hover { background-color: #5a6268; }
+        #settingsMenu { display: none; position: fixed; top: 60px; right: 15px; width: 320px; max-height: calc(100vh - 80px); overflow-y: auto; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 5px; padding: 20px; z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        #settingsMenu h3 { margin-top: 0; margin-bottom: 15px; text-align: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+        .settings-section { margin-bottom: 20px; }
+        .settings-section label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .settings-section input[type="range"] { width: calc(100% - 45px); vertical-align: middle; }
+        .settings-section input[type="checkbox"] { margin-right: 5px; vertical-align: middle; }
+        .settings-section button, .settings-section input[type="file"] { margin-top: 10px; padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; display: block; width: 100%; box-sizing: border-box; text-align: center; }
+        .settings-section button { cursor: pointer; background-color: #007bff; color: white; border: none; }
+        .settings-section button:hover { background-color: #0056b3; }
+        #settingsMenu button#toggleEditModeSettings.edit-mode { background-color: #f44336; }
+        #settingsMenu button#resetBoardSettings { background-color: #ffc107; color: #333; }
+        #settingsMenu button#resetBoardSettings:hover { background-color: #e0a800; }
+        .settings-section button#closeSettingsBtn { margin-top: 15px; background-color: #6c757d; }
+        .setting-value-display { display: inline-block; min-width: 35px; text-align: right; margin-left: 5px; font-size: 0.9em; color: #555; vertical-align: middle; }
+        .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; background-color: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; }
+        .modal-content { background-color: #fefefe; margin: 0; padding: 30px 40px; border: 1px solid #888; width: 80%; max-width: 900px; border-radius: 8px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); position: relative; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .close-btn { color: #aaa; position: absolute; top: 10px; right: 25px; font-size: 32px; font-weight: bold; cursor: pointer; }
+        .close-btn:hover, .close-btn:focus { color: black; text-decoration: none; }
+        #modalCategoryScore { margin-bottom: 25px; flex-shrink: 0; }
+        #modalQuestion { margin-top: 15px; margin-bottom: 20px; font-size: 50px; line-height: 1.7; min-height: 200px; font-weight: 500; padding: 20px; background-color: #f8f9fa; border-left: 5px solid #007bff; border-radius: 4px; overflow-y: auto; flex-grow: 1; }
+        #modalActions { flex-shrink: 0; }
+        #modalActions button { padding: 12px 18px; margin-right: 10px; cursor: pointer; border: none; border-radius: 4px; }
+        #closeModalBtn{ background-color: #6c757d; color: white; }
+        #editModal .modal-content { width: 70%; max-width: 700px; max-height: 80vh; display: block; margin: auto; }
+        #editModal label { display: block; margin-top: 15px; font-weight: bold; }
+        #editModal input[type="text"], #editModal textarea { width: 95%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
+        #editModal textarea { height: 100px; resize: vertical; }
+        #saveEditBtn { background-color: #28a745; color: white; }
+        #cancelEditBtn { background-color: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+
+    <div id="gameContainer">
+        <table id="gameBoard">
+            <thead>
+                <tr id="categoryHeaders">
+                    <!-- Categories will be loaded here -->
+                </tr>
+            </thead>
+            <tbody id="questionGrid">
+                <!-- Questions will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <button id="settingsButton">설정</button>
+
+    <div id="settingsMenu">
+        <h3>설정</h3>
+
+        <div class="settings-section">
+            <label>CSV 데이터</label>
+            <button id="downloadTemplateBtn">CSV 양식 다운로드</button>
+            <label for="csvFileInputSettings" style="margin-top: 10px;">CSV 파일 업로드:</label>
+            <input type="file" id="csvFileInputSettings" accept=".csv" style="border: none; padding: 0;">
+        </div>
+
+        <div class="settings-section font-setting">
+            <label for="categoryFontSize">카테고리 글자 크기:</label>
+            <input type="range" id="categoryFontSize" min="20" max="80" value="50">
+            <span class="setting-value-display" id="categoryFontSizeValue">50px</span>
+            <label style="display: inline-block; margin-left: 10px;">
+                <input type="checkbox" id="categoryFontBold" checked> 굵게
+            </label>
+        </div>
+
+        <div class="settings-section font-setting">
+            <label for="scoreFontSize">점수/확인 글자 크기:</label>
+            <input type="range" id="scoreFontSize" min="30" max="100" value="60">
+             <span class="setting-value-display" id="scoreFontSizeValue">60px</span>
+            <label style="display: inline-block; margin-left: 10px;">
+                <input type="checkbox" id="scoreFontBold" checked> 굵게
+            </label>
+        </div>
+
+        <div class="settings-section font-setting">
+            <label for="hintFontSize">힌트 글자 크기:</label>
+            <input type="range" id="hintFontSize" min="30" max="80" value="50">
+            <span class="setting-value-display" id="hintFontSizeValue">50px</span>
+        </div>
+
+         <div class="settings-section cell-height-setting">
+            <label for="categoryHeight">카테고리 행 높이:</label>
+            <input type="range" id="categoryHeight" min="5" max="30" value="12">
+            <span class="setting-value-display" id="categoryHeightValue">12vh</span>
+        </div>
+
+        <div class="settings-section cell-height-setting">
+            <label for="scoreHeight">점수 행 높이:</label>
+            <input type="range" id="scoreHeight" min="10" max="40" value="18">
+            <span class="setting-value-display" id="scoreHeightValue">18vh</span>
+        </div>
+
+
+        <div class="settings-section">
+             <label>게임 관리</label>
+             <button id="toggleEditModeSettings">편집 모드 켜기</button>
+             <button id="resetBoardSettings">게임판 초기화</button>
+        </div>
+
+         <button id="closeSettingsBtn" onclick="toggleSettingsMenu(false)">닫기</button>
+    </div>
+
+
+    <!-- Question Display Modal -->
+    <div id="questionModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('questionModal')">×</span>
+            <h2 id="modalCategoryScore"></h2>
+            <p style="flex-shrink: 0;"><strong>힌트 (문제):</strong></p>
+            <div id="modalQuestion"></div>
+            <div id="modalActions" style="margin-top: 20px; text-align: right; flex-shrink: 0;">
+                <button id="closeModalBtn" onclick="closeModal('questionModal')">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Question/Hint Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+             <span class="close-btn" onclick="closeModal('editModal')">×</span>
+             <h2 id="editModalTitle">문제(힌트) 수정</h2>
+             <p>카테고리명과 정답은 카테고리 헤더를 직접 클릭하여 수정하세요.</p>
+             <div>
+                 <label for="editQuestion">문제 (힌트 내용):</label>
+                 <textarea id="editQuestion"></textarea>
+             </div>
+              <input type="hidden" id="editCategoryIndex">
+              <input type="hidden" id="editScore">
+             <div id="modalActions" style="margin-top: 20px;">
+                 <button id="saveEditBtn">힌트 저장</button>
+                 <button id="cancelEditBtn" onclick="closeModal('editModal')">취소</button>
+             </div>
+        </div>
+    </div>
+
+
+    <script>
+        let categories = ["1번", "2번", "3번", "4번", "5번", "6번", "7번", "8번"];
+        const scores = [100, 200, 300, 400];
+        let gameData = {};
+        let isEditMode = false;
+        let currentEditingCell = null;
+
+        // --- NEW: Default Data Structure ---
+        const defaultQuizData = {
+            "1번": {
+                answer: "계좌", attempted: false,
+                scores: {
+                    100: { q: "돈을 넣어두는 주머니 같은 거예요.", used: false },
+                    200: { q: "은행에 돈을 넣거나 빼기 위해 만드는 개인 전용 공간이에요.", used: false },
+                    300: { q: "은행에서 예금이나 출금을 할 수 있도록 고객에게 부여하는 고유한 금융 정보입니다.", used: false },
+                    400: { q: "금융기관에서 고객의 거래 내역을 기록·관리하는 시스템 단위로, 입출금, 대출, 투자 등 다양한 형태로 운영됩니다.", used: false }
+                }
+            },
+            "2번": {
+                answer: "이체", attempted: false,
+                scores: {
+                    100: { q: "내 돈을 다른 사람에게 보내는 거예요.", used: false },
+                    200: { q: "내 계좌에서 다른 사람 계좌로 돈을 옮기는 거예요.", used: false },
+                    300: { q: "한 계좌에서 다른 계좌로 자금을 이동시키는 금융 거래 행위입니다.", used: false },
+                    400: { q: "은행 내부 또는 외부 계좌 간의 자금 이동으로, 실시간 또는 예약 방식으로 처리되며 수수료 및 한도 정책이 적용됩니다.", used: false }
+                }
+            },
+             "3번": {
+                answer: "예금", attempted: false,
+                scores: {
+                    100: { q: "은행에 돈을 맡기는 거예요.", used: false },
+                    200: { q: "은행에 돈을 넣어두면 나중에 다시 찾을 수 있어요.", used: false },
+                    300: { q: "고객이 일정 금액을 은행에 맡기고 일정 기간 뒤에 찾는 금융 상품입니다.", used: false },
+                    400: { q: "은행이 고객으로부터 자금을 수취하고, 이에 대한 이자를 지급하는 조건의 금융 계약 형태입니다.", used: false }
+                }
+            },
+             "4번": {
+                answer: "적금", attempted: false,
+                scores: {
+                    100: { q: "조금씩 돈을 모으는 거예요.", used: false },
+                    200: { q: "매달 정해진 돈을 은행에 넣고 나중에 한꺼번에 찾는 거예요.", used: false },
+                    300: { q: "정해진 기간 동안 정기적으로 돈을 넣고, 만기 시 원금과 이자를 받는 금융 상품입니다.", used: false },
+                    400: { q: "고정된 주기로 일정 금액을 납입하고, 계약 기간 종료 시 이자와 함께 수령하는 저축성 예금의 일종입니다.", used: false }
+                }
+            },
+             "5번": {
+                answer: "대출", attempted: false,
+                scores: {
+                    100: { q: "돈이 필요할 때 은행에서 잠깐 빌리는 거예요.", used: false },
+                    200: { q: "필요한 돈을 은행에서 빌리고 나중에 갚는 거예요.", used: false },
+                    300: { q: "금융기관이 고객에게 일정 금액의 자금을 일정 조건에 따라 빌려주는 행위입니다.", used: false },
+                    400: { q: "차주의 신용도 및 담보 조건에 따라 금리와 상환 기간이 결정되는 채무계약으로, 금융기관의 주요 수익원입니다.", used: false }
+                }
+            },
+             "6번": {
+                answer: "이자", attempted: false,
+                scores: {
+                    100: { q: "돈을 맡기면 은행이 주는 보너스예요.", used: false },
+                    200: { q: "돈을 맡기면 시간이 지나면 조금 더 많은 돈을 돌려줘요.", used: false },
+                    300: { q: "예금, 적금, 대출 등 금융 거래에 따라 발생하는 돈의 사용료입니다.", used: false },
+                    400: { q: "자금의 사용에 대한 대가로 지급되며, 시장 금리, 신용도, 기간 등에 따라 달라지는 금융 요소입니다.", used: false }
+                }
+            },
+             "7번": {
+                answer: "환율", attempted: false,
+                scores: {
+                    100: { q: "나라 돈을 다른 나라 돈으로 바꾸는 비율이에요.", used: false },
+                    200: { q: "우리나라 돈과 다른 나라 돈을 바꿀 때 기준이 되는 숫자예요.", used: false },
+                    300: { q: "두 나라 간 통화를 교환할 때 적용되는 비율로, 외환 시장에서 실시간으로 변동됩니다.", used: false },
+                    400: { q: "국가 간 무역, 자본 이동 등에 영향을 주는 주요 경제 지표로, 변동OO제 하에서는 수급 요인에 따라 실시간 조정됩니다.", used: false }
+                }
+            },
+             "8번": {
+                answer: "펀드", attempted: false,
+                scores: {
+                    100: { q: "여러 사람이 돈을 모아서 함께 투자하는 거예요.", used: false },
+                    200: { q: "전문가가 대신 돈을 투자해주는 상품이에요.", used: false },
+                    300: { q: "투자자들의 자금을 모아 다양한 자산에 분산 투자하는 금융 상품입니다.", used: false },
+                    400: { q: "운용사가 다양한 자산에 전략적으로 투자하며, 수익률과 위험을 분석해 운용성과를 창출하는 집합투자기구입니다.", used: false }
+                }
+            }
+        };
+
+        // DOM Elements (references remain correct)
+        const gameBoard = document.getElementById('gameBoard');
+        const categoryHeadersRow = document.getElementById('categoryHeaders');
+        const questionGrid = document.getElementById('questionGrid');
+        const questionModal = document.getElementById('questionModal');
+        const editModal = document.getElementById('editModal');
+        const modalQuestionDiv = document.getElementById('modalQuestion');
+
+        // Settings Elements (references remain correct)
+        const settingsButton = document.getElementById('settingsButton');
+        const settingsMenu = document.getElementById('settingsMenu');
+        const csvFileInputSettings = document.getElementById('csvFileInputSettings');
+        const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+        const categoryFontSizeSlider = document.getElementById('categoryFontSize');
+        const categoryFontBoldCheckbox = document.getElementById('categoryFontBold');
+        const scoreFontSizeSlider = document.getElementById('scoreFontSize');
+        const scoreFontBoldCheckbox = document.getElementById('scoreFontBold');
+        const hintFontSizeSlider = document.getElementById('hintFontSize');
+        const categoryHeightSlider = document.getElementById('categoryHeight');
+        const scoreHeightSlider = document.getElementById('scoreHeight');
+        const categoryFontSizeValueSpan = document.getElementById('categoryFontSizeValue');
+        const scoreFontSizeValueSpan = document.getElementById('scoreFontSizeValue');
+        const hintFontSizeValueSpan = document.getElementById('hintFontSizeValue');
+        const categoryHeightValueSpan = document.getElementById('categoryHeightValue');
+        const scoreHeightValueSpan = document.getElementById('scoreHeightValue');
+        const toggleEditModeSettingsBtn = document.getElementById('toggleEditModeSettings');
+        const resetBoardSettingsBtn = document.getElementById('resetBoardSettings');
+
+
+        // --- Initialization ---
+        function initializeBoard(useDefaultCategories = true) {
+             categoryHeadersRow.innerHTML = '';
+             questionGrid.innerHTML = '';
+
+            if (useDefaultCategories) {
+                 // --- Use the new default data ---
+                 categories = Object.keys(defaultQuizData); // Get categories from default data keys
+                 // Deep copy default data to gameData
+                 gameData = JSON.parse(JSON.stringify(defaultQuizData));
+            } else {
+                 // --- Logic for loading from CSV (keep existing data structure) ---
+                 const tempGameData = JSON.parse(JSON.stringify(gameData)); // Preserve current state if needed
+                 const loadedCategories = Object.keys(tempGameData);
+                 categories.length = 0;
+                 categories.push(...loadedCategories.slice(0, 8));
+                 // Ensure 8 categories, filling with generic defaults if needed (shouldn't happen often now)
+                 while (categories.length < 8) {
+                      const newCatName = `${categories.length + 1}번`;
+                      categories.push(newCatName);
+                      // If adding a category not in tempGameData, initialize it (rare case)
+                      if (!tempGameData[newCatName]) {
+                          gameData[newCatName] = { answer: `(${newCatName} 정답)`, attempted: false, scores: {} };
+                          scores.forEach(s => {
+                              gameData[newCatName].scores[s] = { q: `(${newCatName} - ${s}점 힌트)`, used: false };
+                          });
+                      } else {
+                          gameData[newCatName] = tempGameData[newCatName];
+                      }
+                 }
+                 categories = categories.slice(0, 8);
+                 // Ensure gameData only contains the final 8 categories
+                 Object.keys(gameData).forEach(catKey => {
+                     if (!categories.includes(catKey)) {
+                         delete gameData[catKey];
+                     }
+                 });
+            }
+
+            // --- Create Headers and Grid (remains mostly the same) ---
+            categories.forEach((cat, index) => {
+                const th = document.createElement('th');
+                th.textContent = cat;
+                th.classList.add('category-header');
+                th.dataset.categoryIndex = index;
+                th.dataset.categoryName = cat;
+                th.dataset.displayState = 'category';
+                categoryHeadersRow.appendChild(th);
+            });
+
+            scores.forEach(score => {
+                const tr = document.createElement('tr');
+                categories.forEach((cat, catIndex) => {
+                    const td = document.createElement('td');
+                    td.classList.add('question-cell');
+                    td.dataset.category = cat;
+                    td.dataset.score = score;
+                    td.dataset.categoryIndex = catIndex;
+
+                    // Check if gameData[cat] exists before accessing scores
+                    const scoreData = gameData[cat]?.scores?.[score];
+                    if (scoreData?.used) {
+                        td.textContent = '확인';
+                        td.classList.add('used');
+                    } else {
+                        td.textContent = `${score}점`;
+                    }
+                    tr.appendChild(td);
+                });
+                questionGrid.appendChild(tr);
+            });
+
+            // Apply settings AFTER elements are created
+            applyFontSettings();
+            applyHeightSettings();
+            applyHintFontSize();
+            updateHintFontSizeDisplay();
+
+            // Set up listeners and initial UI states
+            updateCategoryHeaderListeners();
+            updateEditModeVisuals();
+            console.log("Board initialized/updated. Current gameData:", gameData);
+        }
+
+        // createDefaultCategoryData function is no longer needed and removed.
+
+        // --- Event Listeners (remain the same) ---
+        settingsButton.addEventListener('click', toggleSettingsMenu);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F2') { e.preventDefault(); toggleSettingsMenu(); }
+            if (e.key === 'Escape') {
+                 closeModal('questionModal');
+                 closeModal('editModal');
+                 toggleSettingsMenu(false);
+            }
+        });
+
+        csvFileInputSettings.addEventListener('change', handleFileUpload);
+        downloadTemplateBtn.addEventListener('click', downloadCsvTemplate); // Changed this function below
+        questionGrid.addEventListener('click', handleCellClick);
+        categoryHeadersRow.addEventListener('click', handleCategoryHeaderClick);
+
+        categoryFontSizeSlider.addEventListener('input', handleFontSettingChange);
+        categoryFontBoldCheckbox.addEventListener('change', handleFontSettingChange);
+        scoreFontSizeSlider.addEventListener('input', handleFontSettingChange);
+        scoreFontBoldCheckbox.addEventListener('change', handleFontSettingChange);
+        hintFontSizeSlider.addEventListener('input', handleHintFontSettingChange);
+        categoryHeightSlider.addEventListener('input', handleHeightSettingChange);
+        scoreHeightSlider.addEventListener('input', handleHeightSettingChange);
+
+        toggleEditModeSettingsBtn.addEventListener('click', toggleEditMode);
+        resetBoardSettingsBtn.addEventListener('click', () => {
+            if (confirm("정말로 게임판을 기본 금융 용어 데이터로 되돌리시겠습니까?")) {
+                // Reset sliders to default values before initializing
+                categoryFontSizeSlider.value = 50;
+                scoreFontSizeSlider.value = 60;
+                hintFontSizeSlider.value = 50; // Reset hint slider
+                categoryHeightSlider.value = 12;
+                scoreHeightSlider.value = 18;
+                categoryFontBoldCheckbox.checked = true;
+                scoreFontBoldCheckbox.checked = true;
+
+                initializeBoard(true); // Re-initialize with default data and apply settings
+                isEditMode = false;
+                updateEditMode();
+                alert("게임판이 기본값으로 초기화되었습니다.");
+                toggleSettingsMenu(false);
+            }
+        });
+
+        document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
+
+        // --- Modal Handling (remains the same) ---
+        function closeModal(modalId) {
+             const modal = document.getElementById(modalId);
+             if(modal) modal.style.display = 'none';
+             if (modalId === 'editModal') currentEditingCell = null;
+        }
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'flex';
+        }
+
+        // --- Category Header Click Handling (remains the same) ---
+        function handleCategoryHeaderClick(event) {
+            const th = event.target.closest('th.category-header');
+            if (!th) return;
+            const categoryIndex = parseInt(th.dataset.categoryIndex);
+            const categoryName = th.dataset.categoryName;
+
+             if (isEditMode) {
+                 const currentAnswer = gameData[categoryName]?.answer || '';
+                 const newCategoryName = prompt(`[편집] '${categoryName}' 카테고리 이름:`, categoryName);
+                 if (newCategoryName && newCategoryName.trim() !== "") {
+                     const newAnswer = prompt(`[편집] '${newCategoryName}' 카테고리 정답:`, (newCategoryName === categoryName) ? currentAnswer : `(${newCategoryName} 정답)`);
+                     if (newAnswer === null) return;
+                     const nameExists = categories.some((cat, idx) => idx !== categoryIndex && cat === newCategoryName);
+                     if (newCategoryName !== categoryName && nameExists) {
+                         alert("오류: 해당 카테고리 이름이 이미 존재합니다."); return;
+                     }
+                     const oldCategoryName = categoryName;
+                     categories[categoryIndex] = newCategoryName;
+                     if (newCategoryName !== oldCategoryName) {
+                         gameData[newCategoryName] = gameData[oldCategoryName] || {}; // Copy or create
+                         Object.assign(gameData[newCategoryName], { answer: newAnswer.trim() }); // Assign answer, preserve scores if exist
+                         if (!gameData[newCategoryName].scores) { // Initialize scores if object was newly created
+                            gameData[newCategoryName].scores = {};
+                            scores.forEach(s => { gameData[newCategoryName].scores[s] = { q: `(${newCategoryName} - ${s}점 힌트)`, used: false }; });
+                            gameData[newCategoryName].attempted = false;
+                         }
+                         if (gameData[oldCategoryName]) delete gameData[oldCategoryName];
+                         questionGrid.querySelectorAll(`td[data-category-index="${categoryIndex}"]`).forEach(cell => { cell.dataset.category = newCategoryName; });
+                         th.dataset.categoryName = newCategoryName;
+                     } else {
+                          if(gameData[categoryName]) gameData[categoryName].answer = newAnswer.trim();
+                          else { // Should not happen if categoryName exists
+                            gameData[categoryName] = { answer: newAnswer.trim(), attempted: false, scores: {} };
+                            scores.forEach(s => { gameData[categoryName].scores[s] = { q: `(${categoryName} - ${s}점 힌트)`, used: false }; });
+                          }
+                     }
+                     th.textContent = newCategoryName;
+                     th.dataset.displayState = 'category';
+                     console.log(`Category updated: ${oldCategoryName} -> ${newCategoryName}, Answer: ${gameData[newCategoryName]?.answer}`);
+                 }
+             } else {
+                 // Play Mode: Toggle Answer
+                 const categoryData = gameData[categoryName];
+                 if (categoryData?.attempted) {
+                     const currentDisplayState = th.dataset.displayState || 'category';
+                     if (currentDisplayState === 'category') {
+                         th.textContent = categoryData.answer || '(정답 없음)';
+                         th.dataset.displayState = 'answer';
+                     } else {
+                         th.textContent = categoryName;
+                         th.dataset.displayState = 'category';
+                     }
+                     applyFontSettings();
+                 }
+             }
+        }
+        function updateCategoryHeaderListeners() {
+             document.querySelectorAll('#categoryHeaders .category-header').forEach(th => {
+                 const categoryName = th.dataset.categoryName;
+                 const categoryData = gameData[categoryName];
+                 th.classList.remove('clickable'); th.title = "";
+                 if (isEditMode) { th.classList.add('clickable'); th.title = "[편집] 이름/정답 수정"; }
+                 else if (categoryData?.attempted) { th.classList.add('clickable'); th.title = "[플레이] 정답 확인/숨기기"; }
+             });
+        }
+
+        // --- Core Logic ---
+        function handleFileUpload(event) { // Overwrites default data
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (parseCSV(e.target.result)) {
+                    alert("CSV 파일 로드가 완료되었습니다!");
+                    toggleSettingsMenu(false);
+                }
+                event.target.value = null;
+            };
+            reader.onerror = () => alert("파일 읽기 오류");
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function parseCSV(csvText) { // Parses uploaded CSV
+            try {
+                const lines = csvText.trim().split(/\r?\n/);
+                if (lines.length < 2) throw new Error("CSV 데이터 부족");
+                const headers = lines[0].split(',').map(h => h.trim());
+                const catIdx = headers.indexOf('Category');
+                const scoreIdx = headers.indexOf('Score');
+                const qIdx = headers.indexOf('Question');
+                const aIdx = headers.indexOf('Answer');
+                if ([catIdx, scoreIdx, qIdx, aIdx].includes(-1)) throw new Error("필수 헤더(Category, Score, Question, Answer) 누락");
+
+                const loadedData = {}; // Temporary storage for parsed data
+                const loadedCategoriesOrder = [];
+
+                for (let i = 1; i < lines.length; i++) {
+                    const values = parseCsvLine(lines[i]);
+                    if (values.length <= Math.max(catIdx, scoreIdx, qIdx, aIdx)) continue;
+                    const category = values[catIdx]?.trim();
+                    const score = parseInt(values[scoreIdx]?.trim());
+                    const question = values[qIdx]?.trim();
+                    const answer = values[aIdx]?.trim();
+                    if (!category || isNaN(score) || !scores.includes(score)) continue;
+
+                    if (!loadedData[category]) {
+                        loadedData[category] = { // Create structure based on first entry for this category
+                            answer: answer || `(${category} 정답)`,
+                            attempted: false,
+                            scores: {}
+                        };
+                         scores.forEach(s => { loadedData[category].scores[s] = { q: `(${category} - ${s}점 힌트)`, used: false }; }); // Initialize all scores
+                        loadedCategoriesOrder.push(category);
+                    }
+                    // Update the specific question, ensuring q isn't empty
+                    loadedData[category].scores[score] = {
+                         q: question || `(${category} - ${score}점 힌트)`,
+                         used: false // Reset used state on load
+                    };
+                     // Update the main answer if a later row provides one (optional, might prefer first answer)
+                     if (answer) loadedData[category].answer = answer;
+                }
+
+                gameData = loadedData; // Overwrite gameData with parsed data
+                categories.length = 0;
+                categories.push(...loadedCategoriesOrder); // Use order from CSV
+                initializeBoard(false); // Rebuild board without using default data
+                return true;
+
+            } catch (error) {
+                alert(`CSV 파싱 오류: ${error.message}. 콘솔 확인.`);
+                console.error("CSV Parsing Error:", error);
+                return false;
+            }
+        }
+        function parseCsvLine(line) { // Remains the same
+            const values = [];
+            let currentVal = ''; let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') { if (inQuotes && line[i+1] === '"') { currentVal += '"'; i++; } else { inQuotes = !inQuotes; } }
+                else if (char === ',' && !inQuotes) { values.push(currentVal); currentVal = ''; }
+                else { currentVal += char; }
+            }
+            values.push(currentVal);
+            return values.map(v => v.trim());
+        }
+
+        function handleCellClick(event) { // Remains the same
+            const target = event.target.closest('td.question-cell');
+            if (!target) return;
+            const category = target.dataset.category;
+            const score = parseInt(target.dataset.score);
+            const categoryIndex = parseInt(target.dataset.categoryIndex);
+            const categoryData = gameData[category];
+            const scoreData = categoryData?.scores?.[score];
+            if (!categoryData || !scoreData) { alert("오류: 해당 문제 데이터를 찾을 수 없습니다."); return; }
+
+            if (isEditMode) {
+                currentEditingCell = target;
+                document.getElementById('editModalTitle').textContent = `'${category}' - ${score}점 힌트 수정`;
+                document.getElementById('editQuestion').value = scoreData.q;
+                document.getElementById('editCategoryIndex').value = categoryIndex;
+                document.getElementById('editScore').value = score;
+                showModal('editModal');
+            } else {
+                if (target.classList.contains('used')) {
+                    target.classList.remove('used');
+                    target.textContent = `${score}점`;
+                    scoreData.used = false;
+                    const isAnyOtherUsed = scores.some(s => gameData[category]?.scores?.[s]?.used);
+                    if (!isAnyOtherUsed && gameData[category]) {
+                         gameData[category].attempted = false;
+                         const header = categoryHeadersRow.querySelector(`th[data-category-index="${categoryIndex}"]`);
+                         if(header && header.dataset.displayState === 'answer') { header.textContent = category; header.dataset.displayState = 'category'; applyFontSettings(); }
+                         updateCategoryHeaderListeners();
+                    }
+                } else {
+                    document.getElementById('modalCategoryScore').textContent = `${category} - ${score}점`;
+                    modalQuestionDiv.innerHTML = scoreData.q.replace(/\n/g, '<br>');
+                    applyHintFontSize();
+                    showModal('questionModal');
+                    target.classList.add('used');
+                    target.textContent = '확인';
+                    scoreData.used = true;
+                    if(categoryData) categoryData.attempted = true;
+                    updateCategoryHeaderListeners();
+                }
+                 applyFontSettings();
+            }
+        }
+
+         function saveEdit() { // Remains the same
+             const questionHint = document.getElementById('editQuestion').value;
+             const categoryIndex = parseInt(document.getElementById('editCategoryIndex').value);
+             const score = parseInt(document.getElementById('editScore').value);
+             const categoryName = categories[categoryIndex];
+             if (categoryName && !isNaN(score) && gameData[categoryName]?.scores?.[score]) {
+                 gameData[categoryName].scores[score].q = questionHint;
+                 closeModal('editModal');
+                 alert("힌트가 저장되었습니다.");
+             } else { alert("오류: 힌트 저장 중 오류 발생."); }
+         }
+
+        // --- Settings Menu Logic ---
+        function toggleSettingsMenu(forceState = null) { // Remains the same
+            const isOpen = settingsMenu.style.display === 'block';
+            const newState = forceState === null ? !isOpen : forceState;
+            settingsMenu.style.display = newState ? 'block' : 'none';
+        }
+
+        // --- NEW: Download Template based on defaultQuizData ---
+        function downloadCsvTemplate() {
+            const header = "Category,Score,Question,Answer\n";
+            let csvRows = [];
+
+            // Iterate through the default data structure
+            Object.keys(defaultQuizData).forEach(categoryName => {
+                const categoryData = defaultQuizData[categoryName];
+                const answer = categoryData.answer;
+                scores.forEach(score => {
+                    const hint = categoryData.scores[score].q;
+                    // Ensure fields with commas are quoted
+                    const formattedHint = hint.includes(',') ? `"${hint}"` : hint;
+                    const formattedAnswer = answer.includes(',') ? `"${answer}"` : answer;
+                    const formattedCategory = categoryName.includes(',') ? `"${categoryName}"` : categoryName;
+                    csvRows.push(`${formattedCategory},${score},${formattedHint},${formattedAnswer}`);
+                });
+            });
+
+            const csvContent = header + csvRows.join("\n");
+            const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "jeopardy_template_금융용어.csv"); // Updated filename
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // --- Font and Height Settings (remain the same) ---
+        function handleFontSettingChange() {
+             applyFontSettings();
+             categoryFontSizeValueSpan.textContent = categoryFontSizeSlider.value + 'px';
+             scoreFontSizeValueSpan.textContent = scoreFontSizeSlider.value + 'px';
+        }
+        function applyFontSettings() {
+            const catSize = categoryFontSizeSlider.value + 'px';
+            const catBold = categoryFontBoldCheckbox.checked ? 'bold' : 'normal';
+            const scoreSize = scoreFontSizeSlider.value + 'px';
+            const scoreBold = scoreFontBoldCheckbox.checked ? 'bold' : 'normal';
+            document.querySelectorAll('#gameBoard th.category-header').forEach(th => { th.style.fontSize = catSize; th.style.fontWeight = catBold; });
+            document.querySelectorAll('#gameBoard td.question-cell').forEach(td => { td.style.fontSize = scoreSize; td.style.fontWeight = scoreBold; });
+        }
+        function handleHintFontSettingChange() { updateHintFontSizeDisplay(); applyHintFontSize(); }
+        function updateHintFontSizeDisplay() { if (hintFontSizeSlider && hintFontSizeValueSpan) { hintFontSizeValueSpan.textContent = hintFontSizeSlider.value + 'px'; } }
+        function applyHintFontSize() { if (modalQuestionDiv && hintFontSizeSlider) { modalQuestionDiv.style.fontSize = hintFontSizeSlider.value + 'px'; } }
+        function handleHeightSettingChange() { applyHeightSettings(); categoryHeightValueSpan.textContent = categoryHeightSlider.value + 'vh'; scoreHeightValueSpan.textContent = scoreHeightSlider.value + 'vh'; }
+        function applyHeightSettings() {
+            const catHeight = categoryHeightSlider.value + 'vh'; const scoreHeight = scoreHeightSlider.value + 'vh';
+            document.querySelectorAll('#gameBoard th.category-header').forEach(th => { th.style.height = catHeight; });
+            document.querySelectorAll('#questionGrid td').forEach(td => { td.style.height = scoreHeight; });
+        }
+
+        // --- Edit Mode Logic (remains the same) ---
+        function toggleEditMode() { isEditMode = !isEditMode; updateEditMode(); toggleSettingsMenu(false); }
+        function updateEditMode() {
+             updateEditModeVisuals();
+             if (!isEditMode) {
+                document.querySelectorAll('#categoryHeaders .category-header').forEach(th => {
+                    if (th.dataset.displayState === 'answer') { th.textContent = th.dataset.categoryName; th.dataset.displayState = 'category'; }
+                });
+                applyFontSettings();
+             }
+        }
+        function updateEditModeVisuals() {
+            if (isEditMode) { toggleEditModeSettingsBtn.textContent = '편집 모드 끄기'; toggleEditModeSettingsBtn.classList.add('edit-mode'); }
+            else { toggleEditModeSettingsBtn.textContent = '편집 모드 켜기'; toggleEditModeSettingsBtn.classList.remove('edit-mode'); }
+            updateCategoryHeaderListeners();
+        }
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+             closeModal('questionModal');
+             closeModal('editModal');
+             initializeBoard(true); // Load with default data initially
+        });
+
+    </script>
+
+</body>
+</html>
