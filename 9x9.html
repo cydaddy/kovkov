@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>신나는 구구단 연습!</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f8ff;
+            text-align: center;
+            flex-direction: column;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            min-width: 350px;
+        }
+        h1 {
+            color: #0056b3;
+            margin-bottom: 20px;
+        }
+        #problem {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: bold;
+        }
+        input[type="number"] {
+            padding: 15px;
+            font-size: 1.5em;
+            width: 100px;
+            text-align: center;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .button-group {
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 12px 20px;
+            font-size: 1.1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            margin: 5px;
+            transition: background-color 0.3s ease, opacity 0.3s ease;
+            min-width: 100px;
+        }
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        #checkBtn {
+            background-color: #28a745;
+            color: white;
+        }
+        #checkBtn:hover:not(:disabled) {
+            background-color: #218838;
+        }
+        #showAnswerBtn {
+            background-color: #ffc107;
+            color: #333;
+        }
+        #showAnswerBtn:hover:not(:disabled) {
+            background-color: #e0a800;
+        }
+         #nextBtn {
+            background-color: #007bff;
+            color: white;
+        }
+        #nextBtn:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        #feedback {
+            margin-top: 20px;
+            font-size: 1.3em;
+            font-weight: bold;
+            min-height: 30px;
+            color: #555;
+        }
+        .correct {
+            color: green;
+        }
+        .incorrect {
+            color: red;
+        }
+        .corrected { /* 오답 수정 시 사용할 스타일 */
+            color: darkorange;
+        }
+        #score-area { /* 점수 영역 묶기 */
+             margin-top: 15px;
+             font-size: 1.1em;
+             color: #555;
+        }
+        #score-area div {
+             margin-bottom: 5px; /* 점수 항목 간 간격 */
+        }
+        /* #roundInfo 스타일은 제거 */
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>신나는 구구단 연습! 🎉</h1>
+
+    <div id="problem">? x ? = ?</div>
+
+    <input type="number" id="answer" placeholder="정답 입력" autofocus>
+
+    <div class="button-group">
+        <button id="checkBtn">확인</button>
+        <button id="showAnswerBtn" disabled>정답 보기</button>
+         <button id="nextBtn" disabled>다음 문제</button>
+    </div>
+
+    <div id="feedback">문제를 보고 정답을 입력하세요!</div>
+
+    <!-- 점수 표시 영역 -->
+    <div id="score-area">
+        <div id="score">점수: 0 / 10</div> <!-- 점수 표시 형식 변경 -->
+        <div id="correctionScore">오답 수정: 0번 👍</div>
+    </div>
+
+    <!-- roundInfo div 제거 -->
+</div>
+
+<script>
+    const problemElement = document.getElementById('problem');
+    const answerInput = document.getElementById('answer');
+    const checkBtn = document.getElementById('checkBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const showAnswerBtn = document.getElementById('showAnswerBtn');
+    const feedbackElement = document.getElementById('feedback');
+    const scoreElement = document.getElementById('score');
+    const correctionScoreElement = document.getElementById('correctionScore');
+    // roundInfoElement 제거
+
+    let num1, num2, correctAnswer;
+    let firstTryCorrectCount = 0; // 첫 시도 정답 횟수 (라운드별 점수)
+    let correctionCount = 0;      // 오답 수정 횟수 (라운드별)
+    let currentProblemIndex = 0; // 현재 라운드의 문제 번호 (1 ~ 10)
+    const problemsPerRound = 10; // 라운드당 문제 수
+
+    let isRetry = false; // 현재 문제가 재시도인지 여부 플래그
+
+    // 상태 관리 함수
+    function setButtonState(checkEnabled, showAnswerEnabled, nextEnabled) {
+        checkBtn.disabled = !checkEnabled;
+        showAnswerBtn.disabled = !showAnswerEnabled;
+        nextBtn.disabled = !nextEnabled;
+        answerInput.disabled = !checkEnabled;
+    }
+
+    // 점수 표시 업데이트 함수
+    function updateScoreDisplay() {
+        // 점수를 "맞힌 개수 / 라운드 문제 수" 형식으로 표시
+        scoreElement.textContent = `점수: ${firstTryCorrectCount} / ${problemsPerRound}`;
+        correctionScoreElement.textContent = `오답 수정: ${correctionCount}번 👍`;
+        // roundInfoElement 업데이트 코드 제거
+    }
+
+    // 랜덤 구구단 문제 생성 함수
+    function generateProblem() {
+        currentProblemIndex++; // 문제 번호 증가
+
+        // 라운드 종료 및 점수 초기화 로직
+        if (currentProblemIndex > problemsPerRound) {
+            alert(`라운드 종료! 최종 점수: ${firstTryCorrectCount} / ${problemsPerRound}\n오답 수정 횟수: ${correctionCount}번`);
+            // 라운드 점수 및 카운트 초기화
+            firstTryCorrectCount = 0;
+            correctionCount = 0;
+            currentProblemIndex = 1; // 새 라운드 시작 (1번 문제부터)
+        }
+
+        isRetry = false; // 새 문제는 항상 첫 시도
+
+        num1 = Math.floor(Math.random() * 8) + 2;
+        num2 = Math.floor(Math.random() * 9) + 1;
+        correctAnswer = num1 * num2;
+
+        problemElement.textContent = `${num1} x ${num2} = ?`;
+        feedbackElement.textContent = '문제를 보고 정답을 입력하세요!';
+        feedbackElement.className = '';
+        answerInput.value = '';
+
+        setButtonState(true, false, false); // 확인 활성화, 정답보기/다음 비활성화
+        updateScoreDisplay(); // 점수판 업데이트 (라운드 시작 또는 진행 중)
+        answerInput.focus();
+    }
+
+    // 정답 확인 함수
+    function checkAnswer() {
+        const userAnswer = parseInt(answerInput.value);
+
+        if (isNaN(userAnswer)) {
+            feedbackElement.textContent = '숫자를 입력해주세요!';
+            feedbackElement.className = 'incorrect';
+            answerInput.value = '';
+            answerInput.focus();
+            return;
+        }
+
+        if (userAnswer === correctAnswer) {
+            if (!isRetry) { // 첫 시도에 정답
+                feedbackElement.textContent = '정답! 👍';
+                feedbackElement.className = 'correct';
+                firstTryCorrectCount++; // 첫 시도 정답 점수 증가
+            } else { // 재시도 끝에 정답
+                feedbackElement.textContent = '오답을 수정했어요! 잘했어요! 😊';
+                feedbackElement.className = 'corrected';
+                correctionCount++; // 오답 수정 횟수 증가
+            }
+            updateScoreDisplay(); // 점수판 업데이트
+            setButtonState(false, false, true); // 다음 문제 버튼 활성화
+
+        } else { // 오답인 경우
+            feedbackElement.textContent = `오답! 다시 시도하거나 정답을 확인하세요. 🤔`;
+            feedbackElement.className = 'incorrect';
+            isRetry = true; // 이제 이 문제는 재시도 상태가 됨
+            answerInput.value = '';
+            setButtonState(true, true, false); // 확인(재시도), 정답 보기 활성화
+            answerInput.focus();
+        }
+    }
+
+    // 정답 보기 함수
+    function showAnswer() {
+        feedbackElement.textContent = `정답은 ${correctAnswer} 입니다. 다음 문제로 넘어갑니다.`;
+        feedbackElement.className = 'incorrect';
+        isRetry = false;
+        setButtonState(false, false, true); // 다음 문제 활성화
+    }
+
+    // 이벤트 리스너 설정
+    checkBtn.addEventListener('click', checkAnswer);
+    nextBtn.addEventListener('click', generateProblem);
+    showAnswerBtn.addEventListener('click', showAnswer);
+
+    // Enter 키 처리
+    answerInput.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            if (!checkBtn.disabled) {
+                checkAnswer();
+            } else if (!nextBtn.disabled) {
+                generateProblem();
+            }
+        }
+    });
+
+    // 페이지 로드 시 첫 문제 생성 (인덱스 0에서 시작)
+    currentProblemIndex = 0; // generateProblem 호출 시 1로 만듦
+    // 라운드별 점수는 처음에 0으로 시작
+    generateProblem();
+
+</script>
+
+</body>
+</html>
