@@ -28,7 +28,7 @@
             margin-bottom: 20px;
         }
         .dan-selector {
-            margin-bottom: 5px; /* Adjusted margin */
+            margin-bottom: 5px;
         }
         .dan-selector label {
             margin-right: 10px;
@@ -41,7 +41,6 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        /* Style for the info text */
         .info-text {
             font-size: 0.9em;
             color: #666;
@@ -152,8 +151,7 @@
             <option value="9">9단</option>
         </select>
     </div>
-    <!-- Informational text added -->
-    <div class="info-text">ℹ️ 단을 바꾸면 푼 문제 수와 정답 점수, 오답 수정 횟수가 초기화됩니다.</div>
+    <div class="info-text">ℹ️ 단을 바꾸면 푼 문제 수와 정답 관련 점수가 초기화됩니다.</div>
 
     <div id="problem">? x ? = ?</div>
 
@@ -191,7 +189,7 @@
     let problemsPresentedCount = 0;
     let firstTryCorrectCount = 0;
     let correctionCount = 0;
-    let isRetry = false;
+    let isRetry = false; // Flag to track if the current check is a retry for the same problem
 
     function setButtonState(checkEnabled, showAnswerEnabled, nextEnabled) {
         checkBtn.disabled = !checkEnabled;
@@ -210,28 +208,20 @@
     }
 
     function startNewPracticeSession() {
-        // Reset all counters
-        problemsPresentedCount = 0; // Reset to 0
+        problemsPresentedCount = 0;
         firstTryCorrectCount = 0;
         correctionCount = 0;
         isRetry = false;
-
-        // Update the display *before* generating the first problem
-        updateScoreDisplay(); // Display will show 0 problems solved
-
-        // Generate the first problem for the new session
-        generateProblem(); // This will *not* increment the counter anymore
-
+        updateScoreDisplay(); // Show 0s
+        generateProblem(); // Generate first problem
         feedbackElement.textContent = `좋아요! ${danSelect.options[danSelect.selectedIndex].text} 연습을 시작합니다! 첫 문제를 풀어보세요.`;
         feedbackElement.className = '';
     }
 
     function generateProblem() {
-        // *** REMOVED problemsPresentedCount++; from here ***
-        isRetry = false;
+        isRetry = false; // Reset retry flag for the new problem
 
         const selectedDan = danSelect.value;
-
         if (selectedDan === "all") {
             num1 = Math.floor(Math.random() * 8) + 2;
         } else {
@@ -242,22 +232,16 @@
 
         problemElement.textContent = `${num1} x ${num2} = ?`;
 
-        // Set appropriate feedback (avoid overwriting the initial session start message)
-        if (problemsPresentedCount > 0) { // Only show "next problem" after at least one is completed
+        // Set feedback (don't overwrite session start message on first problem)
+        if (!feedbackElement.textContent.includes('연습을 시작합니다') || problemsPresentedCount > 0) {
              feedbackElement.textContent = '다음 문제입니다! 정답을 입력하세요.';
-        } else if (!feedbackElement.textContent.includes('연습을 시작합니다')) {
-             // Fallback for the very first load if startNewPracticeSession wasn't called
-             feedbackElement.textContent = '문제를 보고 정답을 입력하세요!';
         }
-        // Ensure styling is neutral unless explicitly set otherwise
-        if (!feedbackElement.className.includes('correct') && !feedbackElement.className.includes('incorrect') && !feedbackElement.className.includes('corrected')) {
-            feedbackElement.className = '';
-        }
+        // Clear correctness styling for the new problem
+        feedbackElement.className = '';
 
         answerInput.value = '';
         setButtonState(true, false, false); // Enable check, disable others
-        // Do NOT update score display here if we want the count increment tied to 'Next'
-        // updateScoreDisplay(); // Let's remove this too, rely on Next/Check/Start to update
+        // Display is updated when checkAnswer is called or session starts
     }
 
     function checkAnswer() {
@@ -271,50 +255,50 @@
             return;
         }
 
+        // *** Increment count on the FIRST check for this problem ***
+        if (!isRetry) {
+            problemsPresentedCount++;
+            // Update score display immediately after incrementing
+            updateScoreDisplay();
+        }
+
         if (userAnswer === correctAnswer) {
-            if (!isRetry) {
+            if (!isRetry) { // Correct on the first try
                 feedbackElement.textContent = '정답! 👍';
                 feedbackElement.className = 'correct';
                 firstTryCorrectCount++;
-            } else {
+            } else { // Correct after retrying
                 feedbackElement.textContent = '오답을 수정했어요! 잘했어요! 😊';
                 feedbackElement.className = 'corrected';
                 correctionCount++;
             }
-            // Update score display after a correct answer is confirmed
+            // Update score display again in case firstTryCorrectCount or correctionCount changed
             updateScoreDisplay();
             setButtonState(false, false, true); // Disable check/show, enable next
 
         } else { // Incorrect answer
             feedbackElement.textContent = `오답! 다시 시도하거나 정답을 확인하세요. 🤔`;
             feedbackElement.className = 'incorrect';
-            isRetry = true;
+            isRetry = true; // Mark that the next check for this problem will be a retry
             answerInput.value = '';
-            // Score doesn't update on incorrect answer yet
+            // Score was already updated (problem count) if it was the first try
             setButtonState(true, true, false); // Enable retry(check)/show, disable next
         }
     }
 
     function showAnswer() {
         feedbackElement.textContent = `정답은 ${correctAnswer} 입니다. 다음 문제로 넘어갑니다.`;
-        feedbackElement.className = 'incorrect'; // Mark as needing to move on
-        isRetry = false; // Reset retry state
-        // No score update needed here for correct/incorrect counts
+        feedbackElement.className = 'incorrect';
+        isRetry = false; // Seeing the answer means no more retries for this problem
+        // Don't increment problem count here, as the answer wasn't 'checked'
         setButtonState(false, false, true); // Disable check/show, enable next
     }
 
     // Event Listeners
     checkBtn.addEventListener('click', checkAnswer);
 
-    // Modified 'Next' button listener
-    nextBtn.addEventListener('click', function() {
-        // Increment the count *when moving to the next problem*
-        problemsPresentedCount++;
-        // Update the display immediately after incrementing
-        updateScoreDisplay();
-        // Generate the actual next problem
-        generateProblem();
-    });
+    // Next button now *only* generates the next problem
+    nextBtn.addEventListener('click', generateProblem);
 
     showAnswerBtn.addEventListener('click', showAnswer);
     danSelect.addEventListener('change', startNewPracticeSession);
@@ -323,18 +307,16 @@
         if (event.key === 'Enter') {
             event.preventDefault();
             if (!checkBtn.disabled) {
-                checkAnswer();
+                checkAnswer(); // Call checkAnswer directly
             } else if (!nextBtn.disabled) {
-                // Trigger the 'click' event on the next button
-                // This ensures the counter logic in the nextBtn listener runs
-                nextBtn.click();
+                generateProblem(); // Call generateProblem directly
             }
         }
     });
 
     // Initial setup on page load
     updateScoreDisplay(); // Show initial scores (all 0)
-    generateProblem(); // Generate the very first problem (counter remains 0)
+    generateProblem();    // Generate the very first problem (counter remains 0)
     feedbackElement.textContent = '연습할 단을 선택하거나 첫 문제를 풀어보세요!'; // Initial message
 
 </script>
