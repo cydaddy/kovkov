@@ -26,6 +26,21 @@
             color: #0056b3;
             margin-bottom: 20px;
         }
+        /* 구구단 선택 추가 */
+        .dan-selector {
+            margin-bottom: 20px;
+        }
+        .dan-selector label {
+            margin-right: 10px;
+            font-size: 1.1em;
+            color: #555;
+        }
+        .dan-selector select {
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
         #problem {
             font-size: 2.5em;
             margin-bottom: 20px;
@@ -110,13 +125,28 @@
         #score-area div {
              margin-bottom: 5px; /* 점수 항목 간 간격 */
         }
-        /* #roundInfo 스타일은 제거 */
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>신나는 구구단 연습! 🎉</h1>
+
+    <!-- 구구단 선택 드롭다운 -->
+    <div class="dan-selector">
+        <label for="danSelect">몇 단을 연습할까요?</label>
+        <select id="danSelect">
+            <option value="all">전체</option>
+            <option value="2">2단</option>
+            <option value="3">3단</option>
+            <option value="4">4단</option>
+            <option value="5">5단</option>
+            <option value="6">6단</option>
+            <option value="7">7단</option>
+            <option value="8">8단</option>
+            <option value="9">9단</option>
+        </select>
+    </div>
 
     <div id="problem">? x ? = ?</div>
 
@@ -128,15 +158,15 @@
          <button id="nextBtn" disabled>다음 문제</button>
     </div>
 
-    <div id="feedback">문제를 보고 정답을 입력하세요!</div>
+    <div id="feedback">연습할 단을 선택하고 문제를 풀어보세요!</div>
 
-    <!-- 점수 표시 영역 -->
+    <!-- 점수 표시 영역 수정 -->
     <div id="score-area">
-        <div id="score">점수: 0 / 10</div> <!-- 점수 표시 형식 변경 -->
+        <div id="problemsSolved">푼 문제: 0</div> <!-- 푼 문제 수 -->
+        <div id="correctAnswers">정답 (첫 시도): 0</div> <!-- 정답 수 -->
         <div id="correctionScore">오답 수정: 0번 👍</div>
     </div>
 
-    <!-- roundInfo div 제거 -->
 </div>
 
 <script>
@@ -146,15 +176,15 @@
     const nextBtn = document.getElementById('nextBtn');
     const showAnswerBtn = document.getElementById('showAnswerBtn');
     const feedbackElement = document.getElementById('feedback');
-    const scoreElement = document.getElementById('score');
+    const problemsSolvedElement = document.getElementById('problemsSolved'); // 푼 문제 수 요소
+    const correctAnswersElement = document.getElementById('correctAnswers'); // 정답 수 요소
     const correctionScoreElement = document.getElementById('correctionScore');
-    // roundInfoElement 제거
+    const danSelect = document.getElementById('danSelect'); // 구구단 선택 요소
 
     let num1, num2, correctAnswer;
-    let firstTryCorrectCount = 0; // 첫 시도 정답 횟수 (라운드별 점수)
-    let correctionCount = 0;      // 오답 수정 횟수 (라운드별)
-    let currentProblemIndex = 0; // 현재 라운드의 문제 번호 (1 ~ 10)
-    const problemsPerRound = 10; // 라운드당 문제 수
+    let problemsPresentedCount = 0; // 총 푼 문제 수 (계속 누적)
+    let firstTryCorrectCount = 0;   // 첫 시도 정답 횟수 (계속 누적)
+    let correctionCount = 0;        // 오답 수정 횟수 (계속 누적)
 
     let isRetry = false; // 현재 문제가 재시도인지 여부 플래그
 
@@ -164,43 +194,47 @@
         showAnswerBtn.disabled = !showAnswerEnabled;
         nextBtn.disabled = !nextEnabled;
         answerInput.disabled = !checkEnabled;
+        if (checkEnabled) {
+            answerInput.focus(); // 입력 가능 상태일 때 포커스
+        }
     }
 
     // 점수 표시 업데이트 함수
     function updateScoreDisplay() {
-        // 점수를 "맞힌 개수 / 라운드 문제 수" 형식으로 표시
-        scoreElement.textContent = `점수: ${firstTryCorrectCount} / ${problemsPerRound}`;
+        problemsSolvedElement.textContent = `푼 문제: ${problemsPresentedCount}`;
+        correctAnswersElement.textContent = `정답 (첫 시도): ${firstTryCorrectCount}`;
         correctionScoreElement.textContent = `오답 수정: ${correctionCount}번 👍`;
-        // roundInfoElement 업데이트 코드 제거
     }
 
     // 랜덤 구구단 문제 생성 함수
     function generateProblem() {
-        currentProblemIndex++; // 문제 번호 증가
-
-        // 라운드 종료 및 점수 초기화 로직
-        if (currentProblemIndex > problemsPerRound) {
-            alert(`라운드 종료! 최종 점수: ${firstTryCorrectCount} / ${problemsPerRound}\n오답 수정 횟수: ${correctionCount}번`);
-            // 라운드 점수 및 카운트 초기화
-            firstTryCorrectCount = 0;
-            correctionCount = 0;
-            currentProblemIndex = 1; // 새 라운드 시작 (1번 문제부터)
-        }
-
+        problemsPresentedCount++; // 문제 수 증가 (제한 없음)
         isRetry = false; // 새 문제는 항상 첫 시도
 
-        num1 = Math.floor(Math.random() * 8) + 2;
+        const selectedDan = danSelect.value;
+
+        if (selectedDan === "all") {
+            // 전체 선택 시: 2단 ~ 9단 랜덤
+            num1 = Math.floor(Math.random() * 8) + 2;
+        } else {
+            // 특정 단 선택 시: 해당 단으로 고정
+            num1 = parseInt(selectedDan);
+        }
+        // 곱하는 수는 항상 1 ~ 9 랜덤
         num2 = Math.floor(Math.random() * 9) + 1;
         correctAnswer = num1 * num2;
 
         problemElement.textContent = `${num1} x ${num2} = ?`;
-        feedbackElement.textContent = '문제를 보고 정답을 입력하세요!';
+        if (problemsPresentedCount === 1) { // 첫 문제일 경우 안내 메시지 유지
+             feedbackElement.textContent = '문제를 보고 정답을 입력하세요!';
+        } else {
+             feedbackElement.textContent = '다음 문제입니다! 정답을 입력하세요.';
+        }
         feedbackElement.className = '';
         answerInput.value = '';
 
         setButtonState(true, false, false); // 확인 활성화, 정답보기/다음 비활성화
-        updateScoreDisplay(); // 점수판 업데이트 (라운드 시작 또는 진행 중)
-        answerInput.focus();
+        updateScoreDisplay(); // 점수판 업데이트
     }
 
     // 정답 확인 함수
@@ -234,38 +268,38 @@
             isRetry = true; // 이제 이 문제는 재시도 상태가 됨
             answerInput.value = '';
             setButtonState(true, true, false); // 확인(재시도), 정답 보기 활성화
-            answerInput.focus();
         }
     }
 
     // 정답 보기 함수
     function showAnswer() {
         feedbackElement.textContent = `정답은 ${correctAnswer} 입니다. 다음 문제로 넘어갑니다.`;
-        feedbackElement.className = 'incorrect';
-        isRetry = false;
+        feedbackElement.className = 'incorrect'; // 정답을 봤으므로 오답 처리와 유사하게 표시
+        isRetry = false; // 정답을 봤으므로 재시도 상태 해제
         setButtonState(false, false, true); // 다음 문제 활성화
+        // 정답을 본 경우는 firstTryCorrectCount나 correctionCount를 증가시키지 않음
     }
 
     // 이벤트 리스너 설정
     checkBtn.addEventListener('click', checkAnswer);
     nextBtn.addEventListener('click', generateProblem);
     showAnswerBtn.addEventListener('click', showAnswer);
+    danSelect.addEventListener('change', generateProblem); // 드롭다운 변경 시 새 문제 생성
 
     // Enter 키 처리
     answerInput.addEventListener('keypress', function(event) {
         if (event.key === 'Enter') {
-            event.preventDefault();
-            if (!checkBtn.disabled) {
+            event.preventDefault(); // 기본 동작 방지 (폼 제출 등)
+            if (!checkBtn.disabled) { // 확인 버튼이 활성화 되어 있을 때
                 checkAnswer();
-            } else if (!nextBtn.disabled) {
+            } else if (!nextBtn.disabled) { // 다음 문제 버튼이 활성화 되어 있을 때
                 generateProblem();
             }
+            // 정답 보기 버튼만 활성화된 경우 Enter로 동작하지 않음 (오입력 방지)
         }
     });
 
-    // 페이지 로드 시 첫 문제 생성 (인덱스 0에서 시작)
-    currentProblemIndex = 0; // generateProblem 호출 시 1로 만듦
-    // 라운드별 점수는 처음에 0으로 시작
+    // 페이지 로드 시 첫 문제 생성 (카운터는 0에서 시작, generateProblem에서 1로 만듦)
     generateProblem();
 
 </script>
