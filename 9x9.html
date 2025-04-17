@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>신나는 구구단 연습!</title>
     <style>
+        /* CSS styles remain the same */
         body {
             font-family: 'Arial', sans-serif;
             display: flex;
@@ -26,7 +27,6 @@
             color: #0056b3;
             margin-bottom: 20px;
         }
-        /* 구구단 선택 추가 */
         .dan-selector {
             margin-bottom: 20px;
         }
@@ -114,16 +114,16 @@
         .incorrect {
             color: red;
         }
-        .corrected { /* 오답 수정 시 사용할 스타일 */
+        .corrected {
             color: darkorange;
         }
-        #score-area { /* 점수 영역 묶기 */
+        #score-area {
              margin-top: 15px;
              font-size: 1.1em;
              color: #555;
         }
         #score-area div {
-             margin-bottom: 5px; /* 점수 항목 간 간격 */
+             margin-bottom: 5px;
         }
     </style>
 </head>
@@ -132,7 +132,6 @@
 <div class="container">
     <h1>신나는 구구단 연습! 🎉</h1>
 
-    <!-- 구구단 선택 드롭다운 -->
     <div class="dan-selector">
         <label for="danSelect">몇 단을 연습할까요?</label>
         <select id="danSelect">
@@ -160,10 +159,9 @@
 
     <div id="feedback">연습할 단을 선택하고 문제를 풀어보세요!</div>
 
-    <!-- 점수 표시 영역 수정 -->
     <div id="score-area">
-        <div id="problemsSolved">푼 문제: 0</div> <!-- 푼 문제 수 -->
-        <div id="correctAnswers">정답 (첫 시도): 0</div> <!-- 정답 수 -->
+        <div id="problemsSolved">푼 문제: 0</div>
+        <div id="correctAnswers">정답 (첫 시도): 0</div>
         <div id="correctionScore">오답 수정: 0번 👍</div>
     </div>
 
@@ -176,68 +174,91 @@
     const nextBtn = document.getElementById('nextBtn');
     const showAnswerBtn = document.getElementById('showAnswerBtn');
     const feedbackElement = document.getElementById('feedback');
-    const problemsSolvedElement = document.getElementById('problemsSolved'); // 푼 문제 수 요소
-    const correctAnswersElement = document.getElementById('correctAnswers'); // 정답 수 요소
+    const problemsSolvedElement = document.getElementById('problemsSolved');
+    const correctAnswersElement = document.getElementById('correctAnswers');
     const correctionScoreElement = document.getElementById('correctionScore');
-    const danSelect = document.getElementById('danSelect'); // 구구단 선택 요소
+    const danSelect = document.getElementById('danSelect');
 
     let num1, num2, correctAnswer;
-    let problemsPresentedCount = 0; // 총 푼 문제 수 (계속 누적)
-    let firstTryCorrectCount = 0;   // 첫 시도 정답 횟수 (계속 누적)
-    let correctionCount = 0;        // 오답 수정 횟수 (계속 누적)
+    let problemsPresentedCount = 0;
+    let firstTryCorrectCount = 0;
+    let correctionCount = 0;
+    let isRetry = false;
 
-    let isRetry = false; // 현재 문제가 재시도인지 여부 플래그
-
-    // 상태 관리 함수
     function setButtonState(checkEnabled, showAnswerEnabled, nextEnabled) {
         checkBtn.disabled = !checkEnabled;
         showAnswerBtn.disabled = !showAnswerEnabled;
         nextBtn.disabled = !nextEnabled;
         answerInput.disabled = !checkEnabled;
         if (checkEnabled) {
-            answerInput.focus(); // 입력 가능 상태일 때 포커스
+            answerInput.focus();
         }
     }
 
-    // 점수 표시 업데이트 함수
     function updateScoreDisplay() {
         problemsSolvedElement.textContent = `푼 문제: ${problemsPresentedCount}`;
         correctAnswersElement.textContent = `정답 (첫 시도): ${firstTryCorrectCount}`;
         correctionScoreElement.textContent = `오답 수정: ${correctionCount}번 👍`;
     }
 
-    // 랜덤 구구단 문제 생성 함수
+    // *** NEW FUNCTION ***: Resets scores and starts a new practice session
+    function startNewPracticeSession() {
+        console.log("단 변경: 점수 초기화 및 새 문제 생성"); // 디버깅용 로그
+        // Reset all counters
+        problemsPresentedCount = 0;
+        firstTryCorrectCount = 0;
+        correctionCount = 0;
+        isRetry = false; // Reset retry state as well
+
+        // Update the display immediately to show zeros
+        updateScoreDisplay();
+
+        // Generate the first problem for the new session
+        // generateProblem will increment problemsPresentedCount to 1
+        generateProblem();
+
+        // Update feedback for the new session
+        feedbackElement.textContent = `좋아요! ${danSelect.options[danSelect.selectedIndex].text} 연습을 시작합니다!`;
+        feedbackElement.className = ''; // Clear previous feedback styling
+    }
+
     function generateProblem() {
-        problemsPresentedCount++; // 문제 수 증가 (제한 없음)
-        isRetry = false; // 새 문제는 항상 첫 시도
+        // Increment counter only when generating a new problem (not resetting)
+        problemsPresentedCount++;
+        isRetry = false;
 
         const selectedDan = danSelect.value;
 
         if (selectedDan === "all") {
-            // 전체 선택 시: 2단 ~ 9단 랜덤
             num1 = Math.floor(Math.random() * 8) + 2;
         } else {
-            // 특정 단 선택 시: 해당 단으로 고정
             num1 = parseInt(selectedDan);
         }
-        // 곱하는 수는 항상 1 ~ 9 랜덤
         num2 = Math.floor(Math.random() * 9) + 1;
         correctAnswer = num1 * num2;
 
         problemElement.textContent = `${num1} x ${num2} = ?`;
-        if (problemsPresentedCount === 1) { // 첫 문제일 경우 안내 메시지 유지
-             feedbackElement.textContent = '문제를 보고 정답을 입력하세요!';
-        } else {
+
+        // Set feedback based on whether it's the very first problem of a session or a subsequent one
+        if (problemsPresentedCount > 1) {
              feedbackElement.textContent = '다음 문제입니다! 정답을 입력하세요.';
+        } else {
+            // For the first problem (count is 1), the feedback is set either by
+            // startNewPracticeSession or initial page load message.
+            // Ensure styling is neutral if not already set by startNewPracticeSession
+             if (feedbackElement.textContent.includes('연습을 시작합니다!')) {
+                 // Keep the message from startNewPracticeSession
+             } else {
+                feedbackElement.textContent = '문제를 보고 정답을 입력하세요!'; // Default first message
+             }
         }
-        feedbackElement.className = '';
+        feedbackElement.className = ''; // Clear previous correctness styling
         answerInput.value = '';
 
-        setButtonState(true, false, false); // 확인 활성화, 정답보기/다음 비활성화
-        updateScoreDisplay(); // 점수판 업데이트
+        setButtonState(true, false, false);
+        updateScoreDisplay(); // Update score display after generating the problem
     }
 
-    // 정답 확인 함수
     function checkAnswer() {
         const userAnswer = parseInt(answerInput.value);
 
@@ -250,57 +271,54 @@
         }
 
         if (userAnswer === correctAnswer) {
-            if (!isRetry) { // 첫 시도에 정답
+            if (!isRetry) {
                 feedbackElement.textContent = '정답! 👍';
                 feedbackElement.className = 'correct';
-                firstTryCorrectCount++; // 첫 시도 정답 점수 증가
-            } else { // 재시도 끝에 정답
+                firstTryCorrectCount++;
+            } else {
                 feedbackElement.textContent = '오답을 수정했어요! 잘했어요! 😊';
                 feedbackElement.className = 'corrected';
-                correctionCount++; // 오답 수정 횟수 증가
+                correctionCount++;
             }
-            updateScoreDisplay(); // 점수판 업데이트
-            setButtonState(false, false, true); // 다음 문제 버튼 활성화
+            updateScoreDisplay();
+            setButtonState(false, false, true);
 
-        } else { // 오답인 경우
+        } else {
             feedbackElement.textContent = `오답! 다시 시도하거나 정답을 확인하세요. 🤔`;
             feedbackElement.className = 'incorrect';
-            isRetry = true; // 이제 이 문제는 재시도 상태가 됨
+            isRetry = true;
             answerInput.value = '';
-            setButtonState(true, true, false); // 확인(재시도), 정답 보기 활성화
+            setButtonState(true, true, false);
         }
     }
 
-    // 정답 보기 함수
     function showAnswer() {
         feedbackElement.textContent = `정답은 ${correctAnswer} 입니다. 다음 문제로 넘어갑니다.`;
-        feedbackElement.className = 'incorrect'; // 정답을 봤으므로 오답 처리와 유사하게 표시
-        isRetry = false; // 정답을 봤으므로 재시도 상태 해제
-        setButtonState(false, false, true); // 다음 문제 활성화
-        // 정답을 본 경우는 firstTryCorrectCount나 correctionCount를 증가시키지 않음
+        feedbackElement.className = 'incorrect';
+        isRetry = false;
+        setButtonState(false, false, true);
     }
 
-    // 이벤트 리스너 설정
+    // Event Listeners
     checkBtn.addEventListener('click', checkAnswer);
     nextBtn.addEventListener('click', generateProblem);
     showAnswerBtn.addEventListener('click', showAnswer);
-    danSelect.addEventListener('change', generateProblem); // 드롭다운 변경 시 새 문제 생성
+    // *** MODIFIED LISTENER ***: Call the new reset function on dropdown change
+    danSelect.addEventListener('change', startNewPracticeSession);
 
-    // Enter 키 처리
     answerInput.addEventListener('keypress', function(event) {
         if (event.key === 'Enter') {
-            event.preventDefault(); // 기본 동작 방지 (폼 제출 등)
-            if (!checkBtn.disabled) { // 확인 버튼이 활성화 되어 있을 때
+            event.preventDefault();
+            if (!checkBtn.disabled) {
                 checkAnswer();
-            } else if (!nextBtn.disabled) { // 다음 문제 버튼이 활성화 되어 있을 때
+            } else if (!nextBtn.disabled) {
                 generateProblem();
             }
-            // 정답 보기 버튼만 활성화된 경우 Enter로 동작하지 않음 (오입력 방지)
         }
     });
 
-    // 페이지 로드 시 첫 문제 생성 (카운터는 0에서 시작, generateProblem에서 1로 만듦)
-    generateProblem();
+    // Initial problem generation on page load (scores start at 0)
+    generateProblem(); // This will set problemsPresentedCount to 1 initially
 
 </script>
 
