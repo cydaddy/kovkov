@@ -102,8 +102,7 @@
   </div>
   
   <div id="editorContainer">
-    <!-- 맞춤법 빨간 밑줄 비활성화 -->
-    <div id="editor" contenteditable="true" spellcheck="false"></div>
+    <div id="editor" contenteditable="true"></div>
   </div>
   
   <script>
@@ -294,8 +293,10 @@
       if (currentPage < pages.length - 1) {
         currentPage++;
       } else {
-        pages.push(""
+        pages.push("");
+        currentPage = pages.length - 1;
       }
+      loadCurrentPage();
     });
     document.getElementById("deletePage").addEventListener("click", function() {
       saveEditorData();
@@ -320,6 +321,7 @@
       const editorContainer = document.getElementById("editorContainer");
       if (toolbar.style.display === "none") {
         toolbar.style.display = "block";
+        // toolbar의 높이에 따라 editorContainer의 높이를 다시 조정
         editorContainer.style.flex = "1 1 auto";
       } else {
         toolbar.style.display = "none";
@@ -363,14 +365,6 @@
         }
         return;
       }
-+     // CTRL+ALT+C: 가로 정렬 가운데
-+     if (e.ctrlKey && e.altKey && (e.key === "c" || e.key === "C")) {
-+       e.preventDefault();
-+       const alignSelect = document.getElementById("hAlignSelect");
-+       alignSelect.value = "center";
-+       applySettings();
-+       saveEditorData();
-+     }
     });
     
     window.addEventListener("resize", function() {
