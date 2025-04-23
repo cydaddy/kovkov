@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>텍스트 에디터</title>
   <style>
-    /* 전체 화면을 flex 컨테이너로 지정 */
     html, body {
       margin: 0;
       padding: 0;
@@ -14,7 +13,6 @@
       flex-direction: column;
       background: #f0f0f0;
     }
-    /* 설정 바 */
     #toolbar {
       padding: 10px;
       background: #f0f0f0;
@@ -22,15 +20,12 @@
       position: relative;
       flex: 0 0 auto;
     }
-    /* 에디터 컨테이너 */
     #editorContainer {
       flex: 1 1 auto;
       overflow: hidden;
     }
-    /* 에디터 영역 */
     #editor {
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       outline: none;
       word-wrap: break-word;
       white-space: pre-wrap;
@@ -39,11 +34,9 @@
       display: flex;
       flex-direction: column;
     }
-    /* 토글 버튼 */
     #toggleToolbar {
       position: fixed;
-      top: 10px;
-      right: 10px;
+      top: 10px; right: 10px;
       z-index: 2000;
     }
   </style>
@@ -80,32 +73,32 @@
   </div>
   <script>
     const storageKey = "textEditorData";
-    const defaultSettings = { fontSize: 20, bgColor: "#ffffff", textColor: "#000000", bold: false, hAlign: "left", vAlign: "flex-start", margin: 10 };
+    const defaultSettings = {
+      fontSize: 20, bgColor: "#ffffff", textColor: "#000000",
+      bold: false, hAlign: "left", vAlign: "flex-start", margin: 10
+    };
 
-    // 로컬 스토리지 로드
     function loadEditorData() {
       const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        try {
-          const data = JSON.parse(stored);
-          const s = data.settings || defaultSettings;
-          document.getElementById('editor').innerText = data.content || '';
-          document.getElementById('fontSizeInput').value = s.fontSize;
-          document.getElementById('fontSizeNumber').value = s.fontSize;
-          document.getElementById('bgColorInput').value = s.bgColor;
-          document.getElementById('textColorInput').value = s.textColor;
-          document.getElementById('boldInput').checked = s.bold;
-          document.getElementById('hAlignSelect').value = s.hAlign;
-          document.getElementById('vAlignSelect').value = s.vAlign;
-          document.getElementById('marginInput').value = s.margin;
-          document.getElementById('marginNumber').value = s.margin;
-        } catch {
-          // 기본값 유지
-        }
+      if (!stored) return;
+      try {
+        const data = JSON.parse(stored);
+        const s = data.settings || defaultSettings;
+        document.getElementById('editor').innerText = data.content || '';
+        document.getElementById('fontSizeInput').value = s.fontSize;
+        document.getElementById('fontSizeNumber').value = s.fontSize;
+        document.getElementById('bgColorInput').value = s.bgColor;
+        document.getElementById('textColorInput').value = s.textColor;
+        document.getElementById('boldInput').checked = s.bold;
+        document.getElementById('hAlignSelect').value = s.hAlign;
+        document.getElementById('vAlignSelect').value = s.vAlign;
+        document.getElementById('marginInput').value = s.margin;
+        document.getElementById('marginNumber').value = s.margin;
+      } catch {
+        // ignore
       }
     }
 
-    // 로컬 스토리지 저장
     function saveEditorData() {
       const data = {
         content: document.getElementById('editor').innerText,
@@ -122,7 +115,6 @@
       localStorage.setItem(storageKey, JSON.stringify(data));
     }
 
-    // 설정 반영
     function applySettings() {
       const ed = document.getElementById('editor');
       const fs = parseInt(document.getElementById('fontSizeInput').value) || defaultSettings.fontSize;
@@ -133,21 +125,31 @@
       ed.style.textAlign = document.getElementById('hAlignSelect').value;
       ed.style.justifyContent = document.getElementById('vAlignSelect').value;
       ed.style.padding = (parseInt(document.getElementById('marginInput').value) || defaultSettings.margin) + 'px';
-
-      // 자동 글씨 크기 조정
       let size = fs;
       while (ed.scrollHeight > ed.clientHeight && size > 5) {
-        size--;
-        ed.style.fontSize = size + 'px';
+        size--; ed.style.fontSize = size + 'px';
       }
     }
 
-    // 이벤트 등록
-    ['fontSizeInput','fontSizeNumber','marginInput','marginNumber','bgColorInput','textColorInput','boldInput','hAlignSelect','vAlignSelect','editor'].forEach(id => {
+    // 입력/변경 이벤트 등록
+    const syncList = ['fontSizeInput','fontSizeNumber','marginInput','marginNumber'];
+    syncList.forEach(id => {
       const el = document.getElementById(id);
-      const event = id === 'editor' ? 'input' : (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
-      el.addEventListener(event, () => { applySettings(); saveEditorData(); });
+      el.addEventListener('input', () => {
+        if (id === 'fontSizeInput') document.getElementById('fontSizeNumber').value = el.value;
+        if (id === 'fontSizeNumber') document.getElementById('fontSizeInput').value = el.value;
+        if (id === 'marginInput') document.getElementById('marginNumber').value = el.value;
+        if (id === 'marginNumber') document.getElementById('marginInput').value = el.value;
+        applySettings(); saveEditorData();
+      });
     });
+    ['bgColorInput','textColorInput'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => { applySettings(); saveEditorData(); });
+    });
+    ['boldInput','hAlignSelect','vAlignSelect'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => { applySettings(); saveEditorData(); });
+    });
+    document.getElementById('editor').addEventListener('input', () => { applySettings(); saveEditorData(); });
 
     // 툴바 토글 (F2)
     document.getElementById('toggleToolbar').addEventListener('click', () => {
@@ -155,18 +157,44 @@
       if (tb.style.display === 'none') { tb.style.display = 'block'; ec.style.flex = '1 1 auto'; }
       else { tb.style.display = 'none'; ec.style.flex = '1 1 100%'; }
     });
+
     window.addEventListener('keydown', e => {
+      // F2: 토글
       if (e.key === 'F2') { e.preventDefault(); document.getElementById('toggleToolbar').click(); }
-      // Ctrl+Shift+C: 가운데 정렬
+      // 글자 크기 단축
+      if (e.altKey && e.shiftKey && ['e','r'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+        const fsEl = document.getElementById('fontSizeInput');
+        let val = parseInt(fsEl.value) || defaultSettings.fontSize;
+        if (e.key.toLowerCase() === 'e' && val < 300) val++;
+        if (e.key.toLowerCase() === 'r' && val > 5) val--;
+        fsEl.value = document.getElementById('fontSizeNumber').value = val;
+        applySettings(); saveEditorData();
+      }
+      // 세로 정렬 단축
+      if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'q') {
+        e.preventDefault(); document.getElementById('vAlignSelect').value = 'flex-start'; applySettings(); saveEditorData();
+      }
+      if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault(); document.getElementById('vAlignSelect').value = 'center'; applySettings(); saveEditorData();
+      }
+      if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault(); document.getElementById('vAlignSelect').value = 'flex-end'; applySettings(); saveEditorData();
+      }
+      // 가로 정렬 단축
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault(); document.getElementById('hAlignSelect').value = 'left'; applySettings(); saveEditorData();
+      }
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'c') {
-        e.preventDefault(); document.getElementById('hAlignSelect').value = 'center'; applySettings(); saveEditorData(); }
+        e.preventDefault(); document.getElementById('hAlignSelect').value = 'center'; applySettings(); saveEditorData();
+      }
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'r') {
+        e.preventDefault(); document.getElementById('hAlignSelect').value = 'right'; applySettings(); saveEditorData();
+      }
     });
 
     window.addEventListener('resize', applySettings);
-
-    // 초기화
-    loadEditorData();
-    applySettings();
+    loadEditorData(); applySettings();
   </script>
 </body>
 </html>
