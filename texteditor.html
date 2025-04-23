@@ -74,32 +74,22 @@
       <input type="range" id="marginInput" value="10" min="0" max="100">
       <input type="number" id="marginNumber" value="10" min="0" max="100"> px
     </div>
-    <div id="topRightButtons">
-      <button id="prevPage">이전 페이지</button>
-      <span id="pageNumber">1</span>
-      <button id="nextPage">다음 페이지</button>
-      <button id="deletePage">페이지 삭제</button>
-      <button id="exportJSON">내보내기</button>
-      <button id="importJSON">불러오기</button>
-    </div>
   </div>
   <div id="editorContainer">
     <div id="editor" contenteditable="true" spellcheck="false"></div>
   </div>
   <script>
     const storageKey = "textEditorData";
-    let pages = [""];
-    let currentPage = 0;
     const defaultSettings = { fontSize: 20, bgColor: "#ffffff", textColor: "#000000", bold: false, hAlign: "left", vAlign: "flex-start", margin: 10 };
 
+    // 로컬 스토리지 로드
     function loadEditorData() {
       const stored = localStorage.getItem(storageKey);
       if (stored) {
         try {
           const data = JSON.parse(stored);
-          pages = data.pages.length ? data.pages : [""];
-          currentPage = typeof data.currentPage === 'number' ? data.currentPage : 0;
           const s = data.settings || defaultSettings;
+          document.getElementById('editor').innerText = data.content || '';
           document.getElementById('fontSizeInput').value = s.fontSize;
           document.getElementById('fontSizeNumber').value = s.fontSize;
           document.getElementById('bgColorInput').value = s.bgColor;
@@ -110,41 +100,39 @@
           document.getElementById('marginInput').value = s.margin;
           document.getElementById('marginNumber').value = s.margin;
         } catch {
-          pages = [""]; currentPage = 0;
+          // 기본값 유지
         }
       }
     }
 
+    // 로컬 스토리지 저장
     function saveEditorData() {
-      pages[currentPage] = document.getElementById('editor').innerText;
-      const settings = {
-        fontSize: parseInt(document.getElementById('fontSizeInput').value) || 20,
-        bgColor: document.getElementById('bgColorInput').value,
-        textColor: document.getElementById('textColorInput').value,
-        bold: document.getElementById('boldInput').checked,
-        hAlign: document.getElementById('hAlignSelect').value,
-        vAlign: document.getElementById('vAlignSelect').value,
-        margin: parseInt(document.getElementById('marginInput').value) || 0
+      const data = {
+        content: document.getElementById('editor').innerText,
+        settings: {
+          fontSize: parseInt(document.getElementById('fontSizeInput').value) || defaultSettings.fontSize,
+          bgColor: document.getElementById('bgColorInput').value,
+          textColor: document.getElementById('textColorInput').value,
+          bold: document.getElementById('boldInput').checked,
+          hAlign: document.getElementById('hAlignSelect').value,
+          vAlign: document.getElementById('vAlignSelect').value,
+          margin: parseInt(document.getElementById('marginInput').value) || defaultSettings.margin
+        }
       };
-      localStorage.setItem(storageKey, JSON.stringify({ pages, currentPage, settings }));
+      localStorage.setItem(storageKey, JSON.stringify(data));
     }
 
-    function loadCurrentPage() {
-      document.getElementById('editor').innerText = pages[currentPage];
-      document.getElementById('pageNumber').innerText = currentPage + 1;
-      applySettings();
-    }
-
+    // 설정 반영
     function applySettings() {
       const ed = document.getElementById('editor');
-      const fs = parseInt(document.getElementById('fontSizeInput').value) || 20;
+      const fs = parseInt(document.getElementById('fontSizeInput').value) || defaultSettings.fontSize;
       ed.style.fontSize = fs + 'px';
       ed.style.backgroundColor = document.getElementById('bgColorInput').value;
       ed.style.color = document.getElementById('textColorInput').value;
       ed.style.fontWeight = document.getElementById('boldInput').checked ? 'bold' : 'normal';
       ed.style.textAlign = document.getElementById('hAlignSelect').value;
       ed.style.justifyContent = document.getElementById('vAlignSelect').value;
-      ed.style.padding = (parseInt(document.getElementById('marginInput').value) || 0) + 'px';
+      ed.style.padding = (parseInt(document.getElementById('marginInput').value) || defaultSettings.margin) + 'px';
 
       // 자동 글씨 크기 조정
       let size = fs;
@@ -154,55 +142,31 @@
       }
     }
 
-    function exportJSON() { saveEditorData(); prompt('복사할 JSON 문자열', localStorage.getItem(storageKey)); }
-    function importJSON() { const str = prompt('JSON 붙여넣기'); if (!str) return; try { localStorage.setItem(storageKey, str); loadEditorData(); loadCurrentPage(); } catch { alert('유효한 JSON이 아닙니다.'); } }
-
     // 이벤트 등록
-    ['fontSizeInput','fontSizeNumber'].forEach(id => document.getElementById(id).addEventListener('input', () => { document.getElementById('fontSizeInput').value = document.getElementById('fontSizeNumber').value = document.getElementById(id).value; applySettings(); saveEditorData(); }));
-    ['marginInput','marginNumber'].forEach(id => document.getElementById(id).addEventListener('input', () => { document.getElementById('marginInput').value = document.getElementById('marginNumber').value = document.getElementById(id).value; applySettings(); saveEditorData(); }));
-    ['bgColorInput','textColorInput'].forEach(id => document.getElementById(id).addEventListener('input', () => { applySettings(); saveEditorData(); }));
-    ['boldInput','hAlignSelect','vAlignSelect'].forEach(id => document.getElementById(id).addEventListener('change', () => { applySettings(); saveEditorData(); }));
-    document.getElementById('editor').addEventListener('input', () => { applySettings(); saveEditorData(); });
-
-    document.getElementById('prevPage').addEventListener('click', () => { saveEditorData(); if (currentPage > 0) currentPage--; loadCurrentPage(); });
-    document.getElementById('nextPage').addEventListener('click', () => {
-      saveEditorData();
-      if (currentPage < pages.length - 1) {
-        currentPage++;
-      } else {
-        pages.push('');
-        currentPage = pages.length - 1;
-      }
-      loadCurrentPage();
-    });
-    document.getElementById('deletePage').addEventListener('click', () => {
-      if (pages.length > 1) { pages.splice(currentPage, 1); currentPage = Math.max(0, currentPage - 1); saveEditorData(); loadCurrentPage(); }
-      else alert('마지막 페이지는 삭제할 수 없습니다.');
+    ['fontSizeInput','fontSizeNumber','marginInput','marginNumber','bgColorInput','textColorInput','boldInput','hAlignSelect','vAlignSelect','editor'].forEach(id => {
+      const el = document.getElementById(id);
+      const event = id === 'editor' ? 'input' : (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
+      el.addEventListener(event, () => { applySettings(); saveEditorData(); });
     });
 
-    document.getElementById('exportJSON').addEventListener('click', exportJSON);
-    document.getElementById('importJSON').addEventListener('click', importJSON);
-
+    // 툴바 토글 (F2)
     document.getElementById('toggleToolbar').addEventListener('click', () => {
       const tb = document.getElementById('toolbar'), ec = document.getElementById('editorContainer');
       if (tb.style.display === 'none') { tb.style.display = 'block'; ec.style.flex = '1 1 auto'; }
       else { tb.style.display = 'none'; ec.style.flex = '1 1 100%'; }
     });
-
     window.addEventListener('keydown', e => {
       if (e.key === 'F2') { e.preventDefault(); document.getElementById('toggleToolbar').click(); }
-      if (e.altKey && e.shiftKey && (e.key.toLowerCase() === 'e' || e.key.toLowerCase() === 'r')) {
-        e.preventDefault(); const fs = document.getElementById('fontSizeInput'); const num = document.getElementById('fontSizeNumber'); let val = parseInt(fs.value);
-        if (e.key.toLowerCase() === 'e' && val < 300) val++; else if (e.key.toLowerCase() === 'r' && val > 5) val--;
-        fs.value = num.value = val; applySettings(); saveEditorData();
-      }
       // Ctrl+Shift+C: 가운데 정렬
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'c') {
         e.preventDefault(); document.getElementById('hAlignSelect').value = 'center'; applySettings(); saveEditorData(); }
     });
+
     window.addEventListener('resize', applySettings);
 
-    loadEditorData(); loadCurrentPage(); applySettings();
+    // 초기화
+    loadEditorData();
+    applySettings();
   </script>
 </body>
 </html>
