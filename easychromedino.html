@@ -37,7 +37,7 @@
     }
 
     function spawnObstacle() {
-      const size = 30 + Math.random() * 20;
+      const size = 40 + Math.random() * 5;
       obstacles.push({ x: canvas.width, y: 150 + (40 - size), width: size, height: size });
       nextSpawn = getNextSpawn();
     }
