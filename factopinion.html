@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>사실일까? 의견일까? 퀴즈 게임</title>
+    <title>사실일까? 의견일까? 퀴즈 게임 (10문제 챌린지!)</title>
     <style>
-        /* 
-         * 이 부분은 꾸미기를 담당하는 CSS 코드입니다. 
-         * 아이들이 좋아할 만한 폰트와 색상으로 구성했습니다.
-         */
+        /* CSS는 이전과 동일합니다. */
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
 
         body {
@@ -163,7 +160,7 @@
             💡 <strong>의견</strong>은 어떤 것에 대한 나의 생각이나 느낌을 말해요. (예: "딸기는 맛있다.")
         </div>
         
-        <div id="score-board">점수: <span id="score">0</span></div>
+        <div id="score-board">점수: <span id="score">0</span> / <span id="total-questions">10</span></div>
         
         <div id="question-container">
             <p id="question-text"></p>
@@ -180,8 +177,9 @@
         </div>
 
         <button id="next-btn" onclick="nextQuestion()">다음 문제</button>
-        <button id="restart-btn" onclick="startGame()">다시 시작하기</button>
+        <button id="restart-btn" onclick="startGame()">새로운 10문제 풀기!</button>
     </div>
+
 
     <script>
         /* 
@@ -339,13 +337,17 @@
             { sentence: "만화 영화 주인공은 용감하다.", answer: "opinion", explanation: "'용감하다'는 것은 주인공의 성격에 대한 해석이므로 '의견'이에요." },
         ];
 
+        const QUESTIONS_PER_ROUND = 10; // 한 라운드당 문제 수
+
         let currentQuestionIndex = 0;
         let score = 0;
         let shuffledQuestions = [];
 
         // HTML 요소 가져오기
         const scoreElement = document.getElementById('score');
+        const totalQuestionsElement = document.getElementById('total-questions');
         const questionTextElement = document.getElementById('question-text');
+        const buttonContainer = document.getElementById('button-container');
         const factBtn = document.getElementById('fact-btn');
         const opinionBtn = document.getElementById('opinion-btn');
         const feedbackContainer = document.getElementById('feedback-container');
@@ -359,10 +361,14 @@
             score = 0;
             currentQuestionIndex = 0;
             scoreElement.textContent = score;
+            totalQuestionsElement.textContent = QUESTIONS_PER_ROUND;
             
-            // 문제를 무작위로 섞음
-            shuffledQuestions = questions.sort(() => Math.random() - 0.5);
+            // *** 변경된 부분: 전체 문제 목록을 무작위로 섞은 후, 10개만 선택합니다. ***
+            const allShuffled = questions.sort(() => Math.random() - 0.5);
+            shuffledQuestions = allShuffled.slice(0, QUESTIONS_PER_ROUND);
             
+            // UI 초기화
+            buttonContainer.style.display = 'flex'; // 버튼 다시 보이게
             nextBtn.style.display = 'none';
             restartBtn.style.display = 'none';
             feedbackContainer.style.display = 'none';
@@ -372,14 +378,12 @@
 
         // 문제 로드 함수
         function loadQuestion() {
+            // *** 변경된 부분: 현재 라운드의 문제 수(10개)를 다 풀었는지 확인합니다. ***
             if (currentQuestionIndex < shuffledQuestions.length) {
-                // 버튼과 피드백 초기화
                 resetState();
-                
                 const currentQuestion = shuffledQuestions[currentQuestionIndex];
-                questionTextElement.textContent = currentQuestion.sentence;
+                questionTextElement.textContent = `Q${currentQuestionIndex + 1}. ${currentQuestion.sentence}`;
             } else {
-                // 게임 종료
                 showFinalScore();
             }
         }
@@ -390,7 +394,7 @@
             opinionBtn.disabled = false;
             feedbackContainer.style.display = 'none';
             nextBtn.style.display = 'none';
-            feedbackContainer.className = 'feedback-container'; // CSS 클래스 초기화
+            feedbackContainer.className = 'feedback-container';
         }
 
         // 정답 확인 함수
@@ -399,22 +403,26 @@
             opinionBtn.disabled = true;
 
             const currentQuestion = shuffledQuestions[currentQuestionIndex];
-            
             feedbackContainer.style.display = 'block';
 
             if (selectedAnswer === currentQuestion.answer) {
-                // 정답일 경우
                 score++;
                 scoreElement.textContent = score;
                 feedbackContainer.classList.add('correct');
                 feedbackTextElement.textContent = "정답이에요! 🎉";
             } else {
-                // 오답일 경우
                 feedbackContainer.classList.add('incorrect');
                 feedbackTextElement.textContent = "아쉬워요. 다시 생각해볼까요? 🤔";
             }
             
             explanationElement.textContent = currentQuestion.explanation;
+            
+            // 마지막 문제가 아니면 '다음 문제' 버튼, 마지막 문제면 '결과 보기' 버튼
+            if(currentQuestionIndex < shuffledQuestions.length - 1) {
+                nextBtn.textContent = "다음 문제";
+            } else {
+                nextBtn.textContent = "결과 보기!";
+            }
             nextBtn.style.display = 'block';
         }
 
@@ -426,10 +434,11 @@
         
         // 최종 점수 보여주는 함수
         function showFinalScore() {
-            questionTextElement.textContent = `퀴즈 끝! 총 ${shuffledQuestions.length}문제 중 ${score}문제를 맞혔어요!`;
-            document.getElementById('button-container').style.display = 'none';
+            // *** 변경된 부분: 10문제에 대한 최종 결과를 보여줍니다. ***
+            questionTextElement.innerHTML = `퀴즈 끝! <br>총 ${QUESTIONS_PER_ROUND}문제 중 <strong>${score}문제</strong>를 맞혔어요!`;
+            buttonContainer.style.display = 'none'; // 선택 버튼 숨기기
             nextBtn.style.display = 'none';
-            restartBtn.style.display = 'block';
+            restartBtn.style.display = 'block'; // 다시하기 버튼 보이기
         }
 
         // 페이지가 로드되면 게임 시작
