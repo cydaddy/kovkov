@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>신나는 구구단 연습!</title>
     <style>
-        /* CSS styles remain the same */
+        /* CSS는 변경 사항 없음 */
         body {
             font-family: 'Arial', sans-serif;
             display: flex;
@@ -21,7 +21,7 @@
             padding: 30px 40px;
             border-radius: 15px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            min-width: 350px;
+            min-width: 380px;
         }
         h1 {
             color: #0056b3;
@@ -29,17 +29,30 @@
         }
         .dan-selector {
             margin-bottom: 5px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
         }
-        .dan-selector label {
-            margin-right: 10px;
-            font-size: 1.1em;
-            color: #555;
+        .dan-selector-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px 15px;
         }
-        .dan-selector select {
-            padding: 8px 12px;
-            font-size: 1em;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+        .dan-option {
+            display: flex;
+            align-items: center;
+        }
+        .dan-option label {
+            margin-left: 5px;
+            cursor: pointer;
+        }
+        .dan-option input[type="checkbox"] {
+            cursor: pointer;
+        }
+        #selectAllOption label {
+            font-weight: bold;
+            color: #0056b3;
         }
         .info-text {
             font-size: 0.9em;
@@ -138,19 +151,46 @@
     <h1>신나는 구구단 연습! 🎉</h1>
 
     <div class="dan-selector">
-        <label for="danSelect">몇 단을 연습할까요?</label>
-        <select id="danSelect">
-            <option value="all">전체</option>
-            <option value="2">2단</option>
-            <option value="3">3단</option>
-            <option value="4">4단</option>
-            <option value="5">5단</option>
-            <option value="6">6단</option>
-            <option value="7">7단</option>
-            <option value="8">8단</option>
-            <option value="9">9단</option>
-        </select>
+        <div class="dan-selector-grid">
+            <div class="dan-option" id="selectAllOption">
+                <input type="checkbox" id="selectAll">
+                <label for="selectAll">전체 선택</label>
+            </div>
+            <div class="dan-option">
+                <input type="checkbox" id="dan2" value="2" class="dan-checkbox">
+                <label for="dan2">2단</label>
+            </div>
+            <div class="dan-option">
+                <input type="checkbox" id="dan3" value="3" class="dan-checkbox">
+                <label for="dan3">3단</label>
+            </div>
+            <div class="dan-option">
+                <input type="checkbox" id="dan4" value="4" class="dan-checkbox">
+                <label for="dan4">4단</label>
+            </div>
+            <div class="dan-option">
+                <input type="checkbox" id="dan5" value="5" class="dan-checkbox">
+                <label for="dan5">5단</label>
+            </div>
+            <div class="dan-option">
+                <input type="checkbox" id="dan6" value="6" class="dan-checkbox">
+                <label for="dan6">6단</label>
+            </div>
+            <div class="dan-option">
+                <input type="checkbox" id="dan7" value="7" class="dan-checkbox">
+                <label for="dan7">7단</label>
+            </div>
+            <div class="dan-option">
+                <input type="checkbox" id="dan8" value="8" class="dan-checkbox">
+                <label for="dan8">8단</label>
+            </div>
+            <div class="dan-option">
+                <input type="checkbox" id="dan9" value="9" class="dan-checkbox">
+                <label for="dan9">9단</label>
+            </div>
+        </div>
     </div>
+
     <div class="info-text">ℹ️ 단을 바꾸면 푼 문제 수와 정답 관련 점수가 초기화됩니다.</div>
 
     <div id="problem">? x ? = ?</div>
@@ -160,7 +200,7 @@
     <div class="button-group">
         <button id="checkBtn">확인</button>
         <button id="showAnswerBtn" disabled>정답 보기</button>
-         <button id="nextBtn" disabled>다음 문제</button>
+        <button id="nextBtn" disabled>다음 문제</button>
     </div>
 
     <div id="feedback">연습할 단을 선택하고 문제를 풀어보세요!</div>
@@ -170,7 +210,6 @@
         <div id="correctAnswers">정답 (첫 시도): 0</div>
         <div id="correctionScore">오답 수정: 0번 👍</div>
     </div>
-
 </div>
 
 <script>
@@ -183,14 +222,25 @@
     const problemsSolvedElement = document.getElementById('problemsSolved');
     const correctAnswersElement = document.getElementById('correctAnswers');
     const correctionScoreElement = document.getElementById('correctionScore');
-    const danSelect = document.getElementById('danSelect');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const danCheckboxes = document.querySelectorAll('.dan-checkbox');
 
     let num1, num2, correctAnswer;
-    let prevNum1 = null, prevNum2 = null; // 이전 문제 저장
+    let prevNum1 = null, prevNum2 = null;
     let problemsPresentedCount = 0;
     let firstTryCorrectCount = 0;
     let correctionCount = 0;
-    let isRetry = false; // Flag to track if retry
+    let isRetry = false;
+
+    function getSelectedDans() {
+        const selected = [];
+        danCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                selected.push(checkbox.value);
+            }
+        });
+        return selected;
+    }
 
     function setButtonState(checkEnabled, showAnswerEnabled, nextEnabled) {
         checkBtn.disabled = !checkEnabled;
@@ -211,20 +261,32 @@
         firstTryCorrectCount = 0;
         correctionCount = 0;
         isRetry = false;
-        prevNum1 = null; prevNum2 = null; // 세션 시작 시 초기화
+        prevNum1 = null; prevNum2 = null;
         updateScoreDisplay();
         generateProblem();
-        feedbackElement.textContent = `좋아요! ${danSelect.options[danSelect.selectedIndex].text} 연습을 시작합니다! 첫 문제를 풀어보세요.`;
+        if (getSelectedDans().length > 0) {
+            feedbackElement.textContent = `좋아요! 선택한 단으로 연습을 시작합니다!`;
+        }
         feedbackElement.className = '';
     }
 
     function generateProblem() {
         isRetry = false;
-        const selectedDan = danSelect.value;
+        const availableDans = getSelectedDans();
+
+        if (availableDans.length === 0) {
+            problemElement.textContent = `? x ? = ?`;
+            feedbackElement.textContent = '연습할 단을 1개 이상 선택해주세요!';
+            feedbackElement.className = 'incorrect';
+            setButtonState(false, false, false);
+            answerInput.value = '';
+            return;
+        }
+
         let newNum1, newNum2;
-        // 이전 문제와 같지 않도록 반복
         do {
-            newNum1 = (selectedDan === 'all') ? Math.floor(Math.random() * 8) + 2 : parseInt(selectedDan);
+            const randomDanIndex = Math.floor(Math.random() * availableDans.length);
+            newNum1 = parseInt(availableDans[randomDanIndex]);
             newNum2 = Math.floor(Math.random() * 9) + 1;
         } while (newNum1 === prevNum1 && newNum2 === prevNum2);
 
@@ -235,8 +297,12 @@
         correctAnswer = num1 * num2;
 
         problemElement.textContent = `${num1} x ${num2} = ?`;
-        if (!feedbackElement.textContent.includes('연습을 시작합니다') || problemsPresentedCount > 0) {
+        if (problemsPresentedCount > 0) {
              feedbackElement.textContent = '다음 문제입니다! 정답을 입력하세요.';
+        } else if (feedbackElement.textContent.includes('연습을 시작합니다')) {
+            // 메시지 유지
+        } else {
+            feedbackElement.textContent = '정답을 입력하세요.';
         }
         feedbackElement.className = '';
 
@@ -290,18 +356,42 @@
     checkBtn.addEventListener('click', checkAnswer);
     nextBtn.addEventListener('click', generateProblem);
     showAnswerBtn.addEventListener('click', showAnswer);
-    danSelect.addEventListener('change', startNewPracticeSession);
-    answerInput.addEventListener('keypress', function(event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            if (!checkBtn.disabled) checkAnswer();
-            else if (!nextBtn.disabled) generateProblem();
-        }
+
+    selectAllCheckbox.addEventListener('change', () => {
+        danCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+        startNewPracticeSession();
     });
 
+    danCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const allChecked = Array.from(danCheckboxes).every(cb => cb.checked);
+            selectAllCheckbox.checked = allChecked;
+            startNewPracticeSession();
+        });
+    });
+
+    // --- 여기부터가 변경된 부분입니다 ---
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            // '확인' 버튼이 활성화 상태이고, 사용자가 입력창에 있을 때
+            if (!checkBtn.disabled && document.activeElement === answerInput) {
+                event.preventDefault(); // 입력창에서의 기본 동작(예: 폼 제출) 방지
+                checkBtn.click();
+            }
+            // '다음 문제' 버튼이 활성화 상태일 때 (포커스와 무관하게 작동)
+            else if (!nextBtn.disabled) {
+                event.preventDefault();
+                nextBtn.click();
+            }
+        }
+    });
+    // --- 변경된 부분 끝 ---
+
+    // 초기 실행
     updateScoreDisplay();
     generateProblem();
-    feedbackElement.textContent = '연습할 단을 선택하거나 첫 문제를 풀어보세요!';
 
 </script>
 
