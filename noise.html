@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>조용한 교실 만들기</title>
+    <style>
+        /* 기본 스타일 */
+        :root {
+            --color-quiet: #4CAF50; /* 초록색 */
+            --color-medium: #FFC107; /* 노란색 */
+            --color-loud: #F44336;   /* 빨간색 */
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Nanum Gothic', sans-serif; /* 나눔고딕 같은 둥근 폰트 */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* 전체 화면을 차지하는 컨테이너 */
+        #container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: var(--color-quiet);
+            transition: background-color 0.5s ease; /* 배경색이 부드럽게 변하도록 설정 */
+            color: white;
+            padding-bottom: 50px; /* 슬라이더 공간 확보 */
+            box-sizing: border-box;
+        }
+
+        /* 메인 측정기 화면 */
+        #main-screen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* 캐릭터 얼굴 (이모지) */
+        #face {
+            font-size: 15vw; /* 화면 크기에 따라 얼굴 크기 조절 */
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+
+        /* 상태 메시지 */
+        #status-text {
+            font-size: 5vw; /* 화면 크기에 따라 글자 크기 조절 */
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* 소음 에너지 바 */
+        #bar-container {
+            width: 80%;
+            max-width: 600px;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 25px;
+            margin-top: 30px;
+            overflow: hidden;
+            border: 5px solid white;
+        }
+
+        #bar {
+            height: 100%;
+            width: 0%; /* 너비는 JavaScript로 조절 */
+            border-radius: 20px;
+            background: linear-gradient(90deg, rgba(76,175,80,1) 0%, rgba(255,235,59,1) 50%, rgba(244,67,54,1) 100%);
+            transition: width 0.1s linear;
+        }
+
+        /* --- 새로 추가된 스타일 --- */
+        /* 민감도 조절 슬라이더 컨테이너 */
+        #settings-container {
+            position: absolute;
+            bottom: 20px;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+        }
+
+        #settings-container label {
+            font-size: 1rem;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        #sensitivity-slider {
+            width: 60%;
+            vertical-align: middle;
+        }
+        /* --- 여기까지 --- */
+        
+        /* 시끄러울 때 흔들리는 효과 */
+        .shake {
+            animation: shake 0.5s;
+            animation-iteration-count: infinite;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="container">
+        <!-- 시작 화면은 삭제되고 바로 메인 화면이 보입니다. -->
+        <div id="main-screen">
+            <div id="face">😊</div>
+            <div id="status-text">마이크 권한을 허용해주세요...</div>
+            <div id="bar-container">
+                <div id="bar"></div>
+            </div>
+        </div>
+
+        <!-- 민감도 조절 슬라이더 추가 -->
+        <div id="settings-container">
+            <label for="sensitivity-slider">민감도 조절:</label>
+            <input type="range" id="sensitivity-slider" min="0.2" max="2" value="1.5" step="0.1">
+        </div>
+    </div>
+
+    <script>
+        // DOM 요소 가져오기
+        const container = document.getElementById('container');
+        const mainScreen = document.getElementById('main-screen');
+        const face = document.getElementById('face');
+        const statusText = document.getElementById('status-text');
+        const bar = document.getElementById('bar');
+        const sensitivitySlider = document.getElementById('sensitivity-slider'); // 슬라이더 요소 추가
+
+        // 오디오 컨텍스트 및 분석기 변수 선언
+        let audioContext;
+        let analyser;
+        let microphone;
+        
+        // 민감도 조절을 위한 변수 추가 (슬라이더의 기본값과 동일하게 설정)
+        let sensitivityMultiplier = parseFloat(sensitivitySlider.value);
+
+        // 화면 꺼짐 방지 기능 (Wake Lock API)
+        let wakeLock = null;
+        const requestWakeLock = async () => {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                console.log('화면 꺼짐 방지 기능이 활성화되었습니다.');
+            } catch (err) {
+                console.error(`${err.name}, ${err.message}`);
+            }
+        };
+
+        // 오디오 초기화 및 시작 함수
+        const initAudio = async () => {
+            try {
+                // 마이크 스트림 요청
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                // 오디오 컨텍스트 생성
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // 분석기 노드 생성
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256; // 분석할 데이터 크기 (속도에 영향)
+                
+                // 마이크 스트림을 소스로 연결
+                microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                
+                // 화면 꺼짐 방지 활성화
+                requestWakeLock();
+                
+                // 실시간 분석 시작
+                update();
+
+            } catch (err) {
+                // 마이크 권한 거부 시
+                statusText.textContent = '마이크 사용을 허용해야 작동해요!';
+                alert('마이크 사용을 허용해야 프로그램이 작동합니다. 페이지를 새로고침하고 다시 시도해주세요.');
+                console.error('마이크 접근 오류:', err);
+            }
+        };
+        
+        // --- 기능 변경/추가 ---
+        
+        // 1. 페이지 로드 시 바로 오디오 초기화 함수 실행
+        window.onload = initAudio;
+        
+        // 2. 민감도 슬라이더에 이벤트 리스너 추가
+        sensitivitySlider.addEventListener('input', (event) => {
+            sensitivityMultiplier = parseFloat(event.target.value);
+            console.log("민감도 변경:", sensitivityMultiplier);
+        });
+        
+        // -----------------------
+
+
+        // 실시간으로 소음 수준을 분석하고 UI를 업데이트하는 함수
+        function update() {
+            // 다음 프레임에 update 함수를 다시 호출 (애니메이션 루프)
+            requestAnimationFrame(update);
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+
+            // 소리의 전체적인 크기 계산
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i];
+            }
+            const average = sum / bufferLength;
+            
+            // 볼륨을 0-100 사이의 값으로 변환 (sensitivityMultiplier를 곱하여 민감도 조절)
+            const volume = Math.min(100, (average / 128) * 100 * sensitivityMultiplier);
+
+            // 에너지 바 너비 업데이트
+            bar.style.width = volume + '%';
+            
+            // 볼륨 수준에 따라 UI 변경
+            if (volume < 25) { // 조용한 상태
+                container.style.backgroundColor = 'var(--color-quiet)';
+                face.textContent = '😊';
+                statusText.textContent = '아주 조용해요! 최고!';
+                face.classList.remove('shake');
+            } else if (volume < 50) { // 조금 시끄러운 상태
+                container.style.backgroundColor = 'var(--color-medium)';
+                face.textContent = '😐';
+                statusText.textContent = '조금만 목소리를 낮춰볼까요?';
+                face.classList.remove('shake');
+            } else { // 매우 시끄러운 상태
+                container.style.backgroundColor = 'var(--color-loud)';
+                face.textContent = '😫';
+                statusText.textContent = '선생님 귀가 아파요! 으악!';
+                face.classList.add('shake'); // 시끄러우면 얼굴 흔들기
+            }
+        }
+    </script>
+</body>
+</html>
