@@ -21,7 +21,6 @@
             width: 100%; height: 100%; display: flex; flex-direction: column;
             justify-content: center; align-items: center; text-align: center;
             background-color: var(--color-quiet);
-            /* 배경색 전환을 더 부드럽게 만듭니다 */
             transition: background-color 1s ease;
             color: white; padding-bottom: 70px; box-sizing: border-box;
         }
@@ -92,21 +91,14 @@
             transform: scale(1.1);
         }
 
-        /* 'shake' 애니메이션을 'pulse'로 변경 */
         .pulse {
             animation: pulse 1.5s infinite;
         }
 
         @keyframes pulse {
-            0% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.1);
-            }
-            100% {
-                transform: scale(1);
-            }
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
@@ -144,7 +136,6 @@
         let microphone;
         let sensitivityMultiplier = parseFloat(sensitivitySlider.value);
         let smoothedVolume = 0;
-        // 막대 움직임을 더 부드럽게 만들기 위해 smoothingFactor 값 조정
         const smoothingFactor = 0.05;
         let isBeeping = false;
 
@@ -227,28 +218,45 @@
             }
         });
 
-        function playBeep() {
-            if (isBeeping || !audioContext) return;
-            isBeeping = true;
+        // --- 경고음 로직 수정: 삑삑삑 반복 ---
 
+        // 단일 비프음을 재생하는 헬퍼 함수
+        function playBeepOnce() {
+            if (!audioContext) return;
+            
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
-
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
 
+            const now = audioContext.currentTime;
             oscillator.type = 'sine';
             oscillator.frequency.value = 880.0;
-            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.05);
-
-            oscillator.start(audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.2);
-            oscillator.stop(audioContext.currentTime + 0.2);
             
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.5, now + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, now + 0.2);
+
+            oscillator.start(now);
+            oscillator.stop(now + 0.2);
+        }
+
+        function playBeep() {
+            if (isBeeping) return;
+            isBeeping = true;
+
+            let beepCount = 0;
+            const beepInterval = setInterval(() => {
+                playBeepOnce();
+                beepCount++;
+                if (beepCount >= 3) {
+                    clearInterval(beepInterval);
+                }
+            }, 300); // 0.3초 간격으로 비프음 재생
+
             setTimeout(() => {
                 isBeeping = false;
-            }, 500);
+            }, 1500); // 다음 경고음이 울릴 때까지의 대기 시간
         }
 
         function update() {
@@ -295,7 +303,7 @@
                 container.style.backgroundColor = 'var(--color-loud)';
                 face.textContent = '😫';
                 statusText.textContent = '주의! 주변 사람들을 방해할 수 있어요!';
-                face.classList.add('pulse'); // 'shake' 대신 'pulse' 클래스 추가
+                face.classList.add('pulse');
                 if (beepToggle.getAttribute('data-beep') === 'on') {
                     playBeep();
                 }
