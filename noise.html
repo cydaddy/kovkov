@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>조용한 교실 만들기 (A-weighting 적용)</title>
     <style>
-        /* CSS 스타일은 이전과 동일합니다. */
         :root {
             --color-quiet: #4CAF50;
             --color-medium: #FFC107;
@@ -50,22 +49,47 @@
             transition: width 0.1s linear;
         }
 
+        /* --- 설정 컨테이너 스타일 개선 --- */
         #settings-container {
-            position: absolute; bottom: 20px; width: 80%; max-width: 500px;
-            text-align: center; padding: 15px;
-            background-color: rgba(0, 0, 0, 0.2); border-radius: 20px;
+            position: absolute;
+            bottom: 20px;
+            width: 90%;
+            max-width: 500px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: space-around; /* 요소들을 균등하게 배치 */
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* 요소 사이의 간격 */
         }
 
         #settings-container label {
-            font-size: 1rem; margin-right: 10px; font-weight: bold;
+            font-size: 1rem;
+            font-weight: bold;
+            white-space: nowrap; /* 줄바꿈 방지 */
         }
 
         #sensitivity-slider {
-            width: 60%; vertical-align: middle; transition: all 0.2s ease-in-out;
+            width: 150px; /* 슬라이더 너비 고정 */
         }
 
-        #beep-checkbox-label {
-            margin-left: 20px;
+        /* --- 아이콘 토글 버튼 스타일 --- */
+        #beep-toggle {
+            font-size: 1.5rem;
+            cursor: pointer;
+            user-select: none; /* 텍스트 선택 방지 */
+            transition: transform 0.2s;
+        }
+
+        #beep-toggle:hover {
+            transform: scale(1.1);
         }
 
         .shake {
@@ -73,16 +97,11 @@
         }
 
         @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
+            0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); }
             100% { transform: translate(1px, -2px) rotate(-1deg); }
         }
     </style>
@@ -97,10 +116,14 @@
             </div>
         </div>
         <div id="settings-container">
-            <label for="sensitivity-slider">민감도 조절:</label>
-            <input type="range" id="sensitivity-slider" min="0" max="1.5" value="1.0" step="0.05">
-            <label id="beep-checkbox-label" for="beep-checkbox">경고음:</label>
-            <input type="checkbox" id="beep-checkbox" checked>
+            <div class="setting-item">
+                <label for="sensitivity-slider">민감도 조절:</label>
+                <input type="range" id="sensitivity-slider" min="0" max="1.5" value="1.0" step="0.05">
+            </div>
+            <div class="setting-item">
+                <label>경고음:</label>
+                <div id="beep-toggle" data-beep="on">🔔</div>
+            </div>
         </div>
     </div>
 
@@ -110,7 +133,7 @@
         const statusText = document.getElementById('status-text');
         const bar = document.getElementById('bar');
         const sensitivitySlider = document.getElementById('sensitivity-slider');
-        const beepCheckbox = document.getElementById('beep-checkbox');
+        const beepToggle = document.getElementById('beep-toggle');
 
         let audioContext;
         let analyser;
@@ -125,7 +148,6 @@
             if ('wakeLock' in navigator) {
                 try {
                     wakeLock = await navigator.wakeLock.request('screen');
-                    console.log('화면 꺼짐 방지 기능이 활성화되었습니다.');
                 } catch (err) {
                     console.error(`${err.name}, ${err.message}`);
                 }
@@ -139,7 +161,6 @@
                 microphone = audioContext.createMediaStreamSource(stream);
 
                 const filters = [];
-                // 어린 아이들의 목소리 주파수(200~300Hz 이상)를 더 잘 감지하도록 필터 조정
                 const f1 = 120.0, f2 = 150.7, f3 = 800.9, f4 = 12200;
                 const Q = 1 / Math.sqrt(2);
 
@@ -190,8 +211,20 @@
             sensitivityMultiplier = parseFloat(event.target.value);
         });
 
+        // --- 아이콘 토글 이벤트 리스너 ---
+        beepToggle.addEventListener('click', () => {
+            const currentState = beepToggle.getAttribute('data-beep');
+            if (currentState === 'on') {
+                beepToggle.setAttribute('data-beep', 'off');
+                beepToggle.textContent = '🔕';
+            } else {
+                beepToggle.setAttribute('data-beep', 'on');
+                beepToggle.textContent = '🔔';
+            }
+        });
+
         function playBeep() {
-            if (isBeeping) return;
+            if (isBeeping || !audioContext) return;
             isBeeping = true;
 
             const oscillator = audioContext.createOscillator();
@@ -223,9 +256,10 @@
                 container.style.backgroundColor = 'var(--color-quiet)';
                 face.textContent = '😊';
                 face.classList.remove('shake');
-                smoothedVolume = 0; // Reset volume
+                smoothedVolume = 0;
                 return;
             }
+            if (!analyser) return;
 
             const bufferLength = analyser.frequencyBinCount;
             const dataArray = new Uint8Array(bufferLength);
@@ -243,22 +277,22 @@
 
             bar.style.width = volume + '%';
 
-            if (volume < 40) { // 조용한 상태
+            if (volume < 40) {
                 container.style.backgroundColor = 'var(--color-quiet)';
                 face.textContent = '😊';
                 statusText.textContent = '좋아요! 적당한 소리 크기예요.';
                 face.classList.remove('shake');
-            } else if (volume < 65) { // 조금 시끄러운 상태
+            } else if (volume < 65) {
                 container.style.backgroundColor = 'var(--color-medium)';
                 face.textContent = '😐';
                 statusText.textContent = '조금 시끄러워요.';
                 face.classList.remove('shake');
-            } else { // 매우 시끄러운 상태
+            } else {
                 container.style.backgroundColor = 'var(--color-loud)';
                 face.textContent = '😫';
                 statusText.textContent = '주의! 주변 사람들을 방해할 수 있어요!';
                 face.classList.add('shake');
-                if (beepCheckbox.checked) {
+                if (beepToggle.getAttribute('data-beep') === 'on') {
                     playBeep();
                 }
             }
