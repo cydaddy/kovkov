@@ -61,7 +61,11 @@
         }
 
         #sensitivity-slider {
-            width: 70%; vertical-align: middle; transition: all 0.2s ease-in-out;
+            width: 60%; vertical-align: middle; transition: all 0.2s ease-in-out;
+        }
+
+        #beep-checkbox-label {
+            margin-left: 20px;
         }
 
         .shake {
@@ -95,16 +99,18 @@
         <div id="settings-container">
             <label for="sensitivity-slider">민감도 조절:</label>
             <input type="range" id="sensitivity-slider" min="0" max="1.5" value="1.0" step="0.05">
+            <label id="beep-checkbox-label" for="beep-checkbox">경고음:</label>
+            <input type="checkbox" id="beep-checkbox" checked>
         </div>
     </div>
 
     <script>
-        // DOM 요소 가져오기
         const container = document.getElementById('container');
         const face = document.getElementById('face');
         const statusText = document.getElementById('status-text');
         const bar = document.getElementById('bar');
         const sensitivitySlider = document.getElementById('sensitivity-slider');
+        const beepCheckbox = document.getElementById('beep-checkbox');
 
         let audioContext;
         let analyser;
@@ -112,6 +118,7 @@
         let sensitivityMultiplier = parseFloat(sensitivitySlider.value);
         let smoothedVolume = 0;
         const smoothingFactor = 0.1;
+        let isBeeping = false;
 
         let wakeLock = null;
         const requestWakeLock = async () => {
@@ -125,21 +132,17 @@
             }
         };
 
-        // --- 수정된 오디오 초기화 함수 ---
         const initAudio = async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 microphone = audioContext.createMediaStreamSource(stream);
 
-                // --- A-weighting 필터 노드 생성 ---
-                // 사람의 청각 특성을 반영하기 위해 여러 필터를 연결합니다.
                 const filters = [];
-                // 필터 계수는 표준 A-weighting 커브를 근사합니다.
-                const f1 = 20.6, f2 = 107.7, f3 = 737.9, f4 = 12200;
-                const Q = 1 / Math.sqrt(2); // Butterworth Q-factor
+                // 어린 아이들의 목소리 주파수(200~300Hz 이상)를 더 잘 감지하도록 필터 조정
+                const f1 = 120.0, f2 = 150.7, f3 = 800.9, f4 = 12200;
+                const Q = 1 / Math.sqrt(2);
 
-                // 2개의 High-pass 필터
                 const hpf1 = audioContext.createBiquadFilter();
                 hpf1.type = "highpass"; hpf1.frequency.value = f1; hpf1.Q.value = Q;
                 filters.push(hpf1);
@@ -148,7 +151,6 @@
                 hpf2.type = "highpass"; hpf2.frequency.value = f1; hpf2.Q.value = Q;
                 filters.push(hpf2);
 
-                // 2개의 Low-pass 필터
                 const lpf1 = audioContext.createBiquadFilter();
                 lpf1.type = "lowpass"; lpf1.frequency.value = f4; lpf1.Q.value = Q;
                 filters.push(lpf1);
@@ -157,24 +159,20 @@
                 lpf2.type = "lowpass"; lpf2.frequency.value = f4; lpf2.Q.value = Q;
                 filters.push(lpf2);
 
-                // 필터로 인해 줄어든 신호 크기를 보상하기 위한 Gain 노드
                 const gainNode = audioContext.createGain();
-                gainNode.gain.value = 2.0; // 약 +6dB
+                gainNode.gain.value = 2.0;
                 filters.push(gainNode);
 
-                // 분석기 노드 생성
                 analyser = audioContext.createAnalyser();
                 analyser.fftSize = 256;
                 analyser.smoothingTimeConstant = 0.8;
 
-                // 노드 연결: 마이크 -> 필터 체인 -> 분석기
                 let lastNode = microphone;
                 filters.forEach(filter => {
                     lastNode.connect(filter);
                     lastNode = filter;
                 });
                 lastNode.connect(analyser);
-                // --- 필터 적용 완료 ---
 
                 requestWakeLock();
                 update();
@@ -192,8 +190,42 @@
             sensitivityMultiplier = parseFloat(event.target.value);
         });
 
+        function playBeep() {
+            if (isBeeping) return;
+            isBeeping = true;
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 880.0;
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.05);
+
+            oscillator.start(audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.2);
+            oscillator.stop(audioContext.currentTime + 0.2);
+            
+            setTimeout(() => {
+                isBeeping = false;
+            }, 500);
+        }
+
         function update() {
             requestAnimationFrame(update);
+            
+            if (sensitivityMultiplier === 0) {
+                statusText.textContent = '측정하지 않고 있습니다.';
+                bar.style.width = '0%';
+                container.style.backgroundColor = 'var(--color-quiet)';
+                face.textContent = '😊';
+                face.classList.remove('shake');
+                smoothedVolume = 0; // Reset volume
+                return;
+            }
 
             const bufferLength = analyser.frequencyBinCount;
             const dataArray = new Uint8Array(bufferLength);
@@ -211,13 +243,12 @@
 
             bar.style.width = volume + '%';
 
-            // --- 필터 적용에 따라 기준값 조정 ---
-            if (volume < 35) { // 조용한 상태
+            if (volume < 40) { // 조용한 상태
                 container.style.backgroundColor = 'var(--color-quiet)';
                 face.textContent = '😊';
                 statusText.textContent = '좋아요! 적당한 소리 크기예요.';
                 face.classList.remove('shake');
-            } else if (volume < 70) { // 조금 시끄러운 상태
+            } else if (volume < 65) { // 조금 시끄러운 상태
                 container.style.backgroundColor = 'var(--color-medium)';
                 face.textContent = '😐';
                 statusText.textContent = '조금 시끄러워요.';
@@ -227,6 +258,9 @@
                 face.textContent = '😫';
                 statusText.textContent = '주의! 주변 사람들을 방해할 수 있어요!';
                 face.classList.add('shake');
+                if (beepCheckbox.checked) {
+                    playBeep();
+                }
             }
         }
     </script>
