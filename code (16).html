@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>구구단 연습 게임 (단 선택 가능)</title>
+    <style>
+        /* 기본 스타일 초기화 및 폰트 설정 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 0;
+            color: #333;
+        }
+
+        /* 게임 전체를 감싸는 컨테이너 */
+        .container {
+            background-color: white;
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        /* 제목 스타일 */
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        /* [NEW] 단 선택 영역 스타일 */
+        #dan-selection-area {
+            margin: 25px 0;
+            padding: 20px;
+            border: 1px solid #dfe6e9;
+            border-radius: 10px;
+            background-color: #fafafa;
+        }
+        #dan-selection-area legend {
+            font-weight: bold;
+            color: #34495e;
+            padding: 0 10px;
+            font-size: 1.1em;
+        }
+        #dan-checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px 15px; /* 세로 간격, 가로 간격 */
+            margin-top: 10px;
+        }
+        #dan-checkboxes label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        #dan-checkboxes label:hover {
+            background-color: #ecf0f1;
+        }
+        #dan-checkboxes input {
+            margin-right: 5px;
+            /* 기본 체크박스 모양을 꾸미기 위해 가끔 사용되나, 호환성을 위해 단순하게 둠 */
+            transform: scale(1.2); /* 약간 크게 */
+            cursor: pointer;
+        }
+
+
+        /* 문제 표시 영역 */
+        #question-area {
+            font-size: 3em;
+            font-weight: bold;
+            color: #3498db;
+            margin: 25px 0;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            min-height: 65px; /* 내용이 없어도 높이 유지 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 입력 필드 스타일 */
+        #answer-input {
+            width: 80%;
+            padding: 15px;
+            font-size: 1.5em;
+            text-align: center;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+        #answer-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        #answer-input:disabled { /* 비활성화 시 스타일 */
+            background-color: #f8f9f9;
+            cursor: not-allowed;
+        }
+
+        /* 버튼 공통 스타일 */
+        button {
+            padding: 12px 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        button:disabled { /* 비활성화 시 스타일 */
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        /* 정답 확인 버튼 */
+        #submit-btn {
+            background-color: #2ecc71;
+            color: white;
+            margin-right: 10px;
+        }
+        
+        /* 다시 시작 버튼 */
+        #reset-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        /* 결과 메시지 영역 */
+        #result-message {
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            min-height: 25px;
+        }
+        .correct { color: #27ae60; }
+        .wrong { color: #c0392b; }
+
+        /* 점수판 */
+        #score-board {
+            margin-top: 25px;
+            font-size: 1.1em;
+            color: #7f8c8d;
+        }
+        #score-board span {
+            font-weight: bold;
+            margin: 0 10px;
+        }
+        #correct-count { color: #2980b9; }
+        #wrong-count { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>구구단 연습 게임</h1>
+        <p>아래에서 연습할 단을 선택하고 문제를 풀어보세요.</p>
+
+        <!-- [NEW] 단 선택 체크박스 영역 -->
+        <fieldset id="dan-selection-area">
+            <legend>연습할 단 선택</legend>
+            <div id="dan-checkboxes">
+                <!-- JavaScript로 체크박스 동적 생성 -->
+            </div>
+        </fieldset>
+
+        <div id="question-area">? × ?</div>
+
+        <input type="number" id="answer-input" placeholder="정답 입력" autofocus>
+        
+        <div>
+            <button id="submit-btn">정답 확인</button>
+            <button id="reset-btn">다시 시작</button>
+        </div>
+
+        <p id="result-message"></p>
+
+        <div id="score-board">
+            <span>맞힌 개수: <span id="correct-count">0</span></span>
+            <span>틀린 개수: <span id="wrong-count">0</span></span>
+        </div>
+    </div>
+
+    <script>
+        // HTML 요소들을 변수에 저장
+        const danCheckboxesContainer = document.getElementById('dan-checkboxes');
+        const questionArea = document.getElementById('question-area');
+        const answerInput = document.getElementById('answer-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const resultMessage = document.getElementById('result-message');
+        const correctCountSpan = document.getElementById('correct-count');
+        const wrongCountSpan = document.getElementById('wrong-count');
+
+        // 게임 상태를 저장할 변수
+        let num1, num2, correctAnswer;
+        let correctCount = 0;
+        let wrongCount = 0;
+
+        // [NEW] 체크박스를 생성하는 함수
+        function createDanCheckboxes() {
+            for (let i = 2; i <= 9; i++) {
+                const label = document.createElement('label');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = i;
+                checkbox.checked = true; // 기본적으로 모두 선택된 상태로 시작
+
+                // 체크박스 상태가 변경될 때마다 새 문제를 즉시 생성할 수 있도록 이벤트 연결
+                checkbox.addEventListener('change', generateQuestion);
+
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(` ${i}단`));
+                danCheckboxesContainer.appendChild(label);
+            }
+        }
+
+        // [NEW] 선택된 단 목록을 가져오는 함수
+        function getSelectedDans() {
+            const checkedBoxes = document.querySelectorAll('#dan-checkboxes input:checked');
+            const selectedDans = [];
+            checkedBoxes.forEach(box => {
+                selectedDans.push(parseInt(box.value, 10));
+            });
+            return selectedDans;
+        }
+
+        // [UPDATED] 새로운 구구단 문제를 생성하는 함수
+        function generateQuestion() {
+            // 선택된 단 목록 가져오기
+            const selectedDans = getSelectedDans();
+
+            // 만약 선택된 단이 하나도 없다면
+            if (selectedDans.length === 0) {
+                questionArea.textContent = '연습할 단을 선택해주세요!';
+                answerInput.value = '';
+                answerInput.disabled = true; // 입력 필드 비활성화
+                submitBtn.disabled = true;   // 확인 버튼 비활성화
+                resultMessage.textContent = '';
+                return;
+            }
+
+            // 비활성화된 요소들을 다시 활성화
+            answerInput.disabled = false;
+            submitBtn.disabled = false;
+
+            // 선택된 단 중에서 하나를 무작위로 선택
+            num1 = selectedDans[Math.floor(Math.random() * selectedDans.length)];
+            // 곱하는 수는 2~9 사이의 난수
+            num2 = Math.floor(Math.random() * 8) + 2;
+            correctAnswer = num1 * num2;
+
+            // 화면에 문제 표시
+            questionArea.textContent = `${num1} × ${num2}`;
+            
+            // 이전 결과 초기화
+            resultMessage.textContent = '';
+            resultMessage.className = '';
+            answerInput.value = '';
+            answerInput.focus();
+        }
+
+        // 정답을 확인하는 함수
+        function checkAnswer() {
+            const userAnswer = parseInt(answerInput.value, 10);
+
+            if (isNaN(userAnswer)) {
+                resultMessage.textContent = '숫자를 입력해주세요!';
+                resultMessage.className = 'wrong';
+                return;
+            }
+
+            if (userAnswer === correctAnswer) {
+                resultMessage.textContent = '정답입니다! 🎉';
+                resultMessage.className = 'correct';
+                correctCount++;
+                correctCountSpan.textContent = correctCount;
+            } else {
+                resultMessage.textContent = `틀렸습니다. 정답은 ${correctAnswer} 입니다. 😭`;
+                resultMessage.className = 'wrong';
+                wrongCount++;
+                wrongCountSpan.textContent = wrongCount;
+            }
+            
+            setTimeout(generateQuestion, 1500);
+        }
+
+        // 게임을 초기화하는 함수
+        function resetGame() {
+            correctCount = 0;
+            wrongCount = 0;
+            correctCountSpan.textContent = correctCount;
+            wrongCountSpan.textContent = wrongCount;
+            generateQuestion();
+        }
+
+        // 초기화 함수
+        function init() {
+            createDanCheckboxes(); // 체크박스 동적 생성
+            generateQuestion();    // 첫 문제 생성
+        }
+        
+        // 이벤트 리스너 설정
+        submitBtn.addEventListener('click', checkAnswer);
+        resetBtn.addEventListener('click', resetGame);
+        answerInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        // 페이지가 처음 로드될 때 게임 초기화 함수 실행
+        window.onload = init;
+
+    </script>
+</body>
+</html>
