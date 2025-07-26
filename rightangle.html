@@ -2,59 +2,128 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>직각 판별 퀴즈</title>
+  <title>알쏭달쏭 직각 찾기 퀴즈</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Gowun Dodum', sans-serif;
+      background-color: #fdf8e1; /* 따뜻한 노란색 배경 */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #quiz-container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
       text-align: center;
-      padding: 20px;
+      width: 400px;
+    }
+    h1 {
+      color: #e67e22;
+      font-size: 28px;
+      margin-top: 0;
+    }
+    #progress-container {
+      width: 100%;
+      background-color: #eee;
+      border-radius: 10px;
+      margin: 20px 0;
+    }
+    #progress-bar {
+      width: 0%;
+      height: 15px;
+      background-color: #2ecc71; /* 초록색 진행 바 */
+      border-radius: 10px;
+      transition: width 0.3s ease-in-out;
     }
     canvas {
-      border: 1px solid #ccc;
-      margin: 10px 0;
+      border: 2px dashed #e0e0e0; /* 점선 테두리 */
+      margin: 15px 0;
+      background-color: #f9f9f9;
+      border-radius: 10px;
     }
-    button {
-      margin: 5px;
-      padding: 8px 12px;
-      font-size: 16px;
+    #buttons button {
+      margin: 8px;
+      padding: 12px 20px;
+      font-size: 18px;
+      font-family: 'Gowun Dodum', sans-serif;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: white;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    #buttons button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    #btnRight { background-color: #27ae60; } /* 초록 계열 */
+    #btnNot { background-color: #f39c12; } /* 주황 계열 */
+    #btnNext { background-color: #3498db; } /* 파랑 계열 */
+    
+    button:disabled {
+      background-color: #bdc3c7; /* 회색 */
+      cursor: not-allowed;
+      opacity: 0.7;
     }
     #status {
       margin-bottom: 10px;
       font-size: 18px;
       font-weight: bold;
+      color: #555;
     }
     #feedback {
-      font-size: 20px;
-      margin-top: 10px;
+      font-size: 24px;
+      margin-top: 15px;
+      min-height: 30px;
+      font-weight: bold;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    #feedback.show {
+        opacity: 1;
+    }
+    #restartBtn {
+        background-color: #e74c3c; /* 빨강 계열 */
+        color: white;
+        padding: 12px 20px;
+        font-size: 18px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>직각 판별 퀴즈</h1>
   <div id="quiz-container">
-    <!-- 문제번호 및 현재 점수를 보여줍니다 -->
+    <h1>알쏭달쏭 직각 찾기 퀴즈</h1>
     <div id="status"></div>
-    <!-- 각을 그릴 캔버스 -->
-    <canvas id="angleCanvas" width="300" height="300"></canvas>
-    <!-- 답변 버튼들 -->
-    <div id="buttons">
-      <button id="btnRight">직각</button>
-      <button id="btnNot">직각 아님</button>
-      <button id="btnNext" disabled>다음</button>
+    <div id="progress-container">
+        <div id="progress-bar"></div>
     </div>
-    <!-- 정답 피드백 -->
+    <canvas id="angleCanvas" width="300" height="300"></canvas>
+    <div id="buttons">
+      <button id="btnRight">직각이에요!</button>
+      <button id="btnNot">직각이 아니에요!</button>
+      <button id="btnNext" disabled>다음 문제</button>
+    </div>
     <div id="feedback"></div>
   </div>
 
   <script>
-    // 전역 변수 설정
-    let currentQuestion = 1;
     const totalQuestions = 10;
+    let currentQuestion = 1;
     let score = 0;
-    let answerGenerated = "";  // 현재 문제의 정답 ("right" 또는 "not")
-    let answered = false;      // 문제에 답변했는지 여부
+    let answerGenerated = "";  // "right", "acute", "obtuse"
+    let answered = false;
 
-    // DOM 엘리먼트 가져오기
     const canvas = document.getElementById("angleCanvas");
     const ctx = canvas.getContext("2d");
     const statusDiv = document.getElementById("status");
@@ -62,148 +131,146 @@
     const btnRight = document.getElementById("btnRight");
     const btnNot = document.getElementById("btnNot");
     const btnNext = document.getElementById("btnNext");
+    const progressBar = document.getElementById("progress-bar");
 
-    // 문제 생성 및 캔버스에 각 그리기 함수
     function newQuestion() {
       answered = false;
       feedbackDiv.textContent = "";
+      feedbackDiv.classList.remove('show');
       btnNext.disabled = true;
-      
-      // 답변 버튼 재활성화
       btnRight.disabled = false;
       btnNot.disabled = false;
 
       updateStatus();
+      updateProgressBar();
 
-      // 캔버스 초기화
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 3; // 선 굵기
+      ctx.strokeStyle = "#333"; // 선 색상
 
-      // 50% 확률로 '직각' 또는 '직각 아님' 선택
-      let angleType = Math.random() < 0.5 ? "right" : "not";
-      answerGenerated = angleType;
-
-      // 캔버스 중앙 위치 (꼭짓점)
+      const isRightAngle = Math.random() < 0.4; // 직각 나올 확률 40%
+      
       const vertex = { x: canvas.width / 2, y: canvas.height / 2 };
-
-      // 임의의 기준 방향 (0 ~ 360°)
       const baseAngle = Math.random() * 2 * Math.PI;
-      // 두 선의 길이를 50 ~ 150 픽셀 (변화폭을 극대화하되 최소 길이는 유지)
-      const length1 = 30 + Math.random() * 100;
-      const length2 = 100 + Math.random() * 100;
+      const length1 = 80 + Math.random() * 50;
+      const length2 = 80 + Math.random() * 50;
 
-      // 각도의 차이를 결정
       let angleDiff;
-      if (angleType === "right") {
+      if (isRightAngle) {
+        answerGenerated = "right";
         angleDiff = Math.PI / 2; // 90도
       } else {
-        // 직각이 아닌 경우: 20° 이상 80° 이하
-        const deg = 20 + Math.random() * 60; // 20도 ~ 80도
-        angleDiff = deg * Math.PI / 180;
+        // 직각이 아닌 경우: 예각 또는 둔각
+        const isAcute = Math.random() < 0.5;
+        if (isAcute) {
+            answerGenerated = "acute"; // 예각
+            const deg = 20 + Math.random() * 50; // 20° ~ 70°
+            angleDiff = deg * Math.PI / 180;
+        } else {
+            answerGenerated = "obtuse"; // 둔각
+            const deg = 110 + Math.random() * 50; // 110° ~ 160°
+            angleDiff = deg * Math.PI / 180;
+        }
       }
+      
       const secondAngle = baseAngle + angleDiff;
 
-      // 첫 번째 선의 끝점
-      const end1 = {
-        x: vertex.x + length1 * Math.cos(baseAngle),
-        y: vertex.y + length1 * Math.sin(baseAngle)
-      };
-      // 두 번째 선의 끝점
-      const end2 = {
-        x: vertex.x + length2 * Math.cos(secondAngle),
-        y: vertex.y + length2 * Math.sin(secondAngle)
-      };
-
-      // 꼭짓점을 작은 원으로 표시
+      const end1 = { x: vertex.x + length1 * Math.cos(baseAngle), y: vertex.y + length1 * Math.sin(baseAngle) };
+      const end2 = { x: vertex.x + length2 * Math.cos(secondAngle), y: vertex.y + length2 * Math.sin(secondAngle) };
+      
+      // 선 그리기 (꼭짓점 점 없이)
       ctx.beginPath();
-      ctx.arc(vertex.x, vertex.y, 4, 0, 2 * Math.PI);
-      ctx.fill();
-
-      // 첫 번째 선 그리기
-      ctx.beginPath();
-      ctx.moveTo(vertex.x, vertex.y);
-      ctx.lineTo(end1.x, end1.y);
-      ctx.stroke();
-
-      // 두 번째 선 그리기
-      ctx.beginPath();
-      ctx.moveTo(vertex.x, vertex.y);
+      ctx.moveTo(end1.x, end1.y);
+      ctx.lineTo(vertex.x, vertex.y);
       ctx.lineTo(end2.x, end2.y);
       ctx.stroke();
     }
-
-    // 상태 업데이트 함수 (문제 번호 및 점수 표시)
-    function updateStatus() {
-      statusDiv.textContent = "문제 " + currentQuestion + " / " + totalQuestions + "   현재 점수: " + score;
+    
+    function updateProgressBar() {
+        const progressPercentage = ((currentQuestion - 1) / totalQuestions) * 100;
+        progressBar.style.width = progressPercentage + "%";
     }
 
-    // 답변 확인 함수
+    function updateStatus() {
+      statusDiv.textContent = `문제 ${currentQuestion} / ${totalQuestions} | 맞힌 개수: ${score}개`;
+    }
+
     function checkAnswer(selected) {
-      if (answered) return; // 이미 답변한 경우 무시
+      if (answered) return;
       answered = true;
 
-      // 답변 버튼 비활성화
       btnRight.disabled = true;
       btnNot.disabled = true;
       
-      if (selected === answerGenerated) {
-        feedbackDiv.textContent = "정답!";
+      feedbackDiv.classList.add('show');
+
+      const isCorrect = (selected === "right" && answerGenerated === "right") || 
+                        (selected === "not" && (answerGenerated === "acute" || answerGenerated === "obtuse"));
+
+      if (isCorrect) {
+        feedbackDiv.textContent = "참 잘했어요! 정답이에요!";
         feedbackDiv.style.color = "green";
         score++;
       } else {
-        feedbackDiv.textContent = "오답!";
         feedbackDiv.style.color = "red";
+        if (answerGenerated === "right") {
+            feedbackDiv.textContent = "아쉬워요! 이건 직각이었어요.";
+        } else if (answerGenerated === "acute") {
+            feedbackDiv.textContent = "아쉬워요! 직각보다 작은 '예각'이에요.";
+        } else {
+            feedbackDiv.textContent = "아쉬워요! 직각보다 큰 '둔각'이에요.";
+        }
       }
       btnNext.disabled = false;
       updateStatus();
     }
 
-    // 버튼 이벤트 등록
-    btnRight.addEventListener("click", function() {
-      checkAnswer("right");
-    });
-
-    btnNot.addEventListener("click", function() {
-      checkAnswer("not");
-    });
-
-    btnNext.addEventListener("click", function() {
-      // 답변하지 않은 상태면 넘어가지 않음
+    btnRight.addEventListener("click", () => checkAnswer("right"));
+    btnNot.addEventListener("click", () => checkAnswer("not"));
+    btnNext.addEventListener("click", () => {
       if (!answered) return;
-
+      
       if (currentQuestion < totalQuestions) {
         currentQuestion++;
         newQuestion();
       } else {
-        // 10문제 모두 완료 시 최종 점수 표시
+        progressBar.style.width = "100%";
         showFinalScore();
       }
     });
 
-    // 최종 점수 및 다시 시작 기능을 보여주는 함수
     function showFinalScore() {
-      // 답변 버튼들 비활성화
       btnRight.disabled = true;
       btnNot.disabled = true;
       btnNext.disabled = true;
-      statusDiv.textContent = "퀴즈 완료! 최종 점수: " + score + " / " + totalQuestions;
-      feedbackDiv.textContent = "";
-
-      // 다시 시작 버튼 생성
+      
+      let finalMessage = "";
+      if (score === totalQuestions) {
+        finalMessage = "와, 완벽해요! 당신은 직각 박사님!";
+      } else if (score >= 7) {
+        finalMessage = `참 잘했어요! 총 ${totalQuestions}개 중에 ${score}개를 맞혔어요.`;
+      } else {
+        finalMessage = `수고했어요! 총 ${totalQuestions}개 중에 ${score}개를 맞혔어요.`;
+      }
+      
+      statusDiv.textContent = `퀴즈 완료!`;
+      feedbackDiv.innerHTML = `${finalMessage}<br>다시 도전해볼까요?`;
+      feedbackDiv.style.color = "#333";
+      feedbackDiv.classList.add('show');
+      
       const restartBtn = document.createElement("button");
-      restartBtn.textContent = "다시 시작하기";
-      restartBtn.addEventListener("click", function(){
-        // 초기화 후 첫 문제 재출력
+      restartBtn.textContent = "처음부터 다시 하기";
+      restartBtn.id = "restartBtn";
+      restartBtn.addEventListener("click", () => {
         currentQuestion = 1;
         score = 0;
-        btnRight.disabled = false;
-        btnNot.disabled = false;
         newQuestion();
-        restartBtn.remove(); // 다시 시작 버튼 제거
+        document.getElementById("quiz-container").removeChild(restartBtn);
       });
       document.getElementById("quiz-container").appendChild(restartBtn);
     }
 
-    // 최초 문제 출력
+    // 퀴즈 시작
     newQuestion();
   </script>
 </body>
