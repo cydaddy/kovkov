@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>구글 드라이브 다운로드 링크 변환기</title>
+    <style>
+        /* 기본 스타일 및 폰트 설정 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        /* 메인 컨테이너 스타일 */
+        .container {
+            background-color: #ffffff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        p {
+            color: #5f6368;
+            margin-bottom: 30px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* 입력 필드 스타일 */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #originalLink {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        #originalLink:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+        
+        /* 버튼 스타일 */
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #fff;
+            background-color: #1a73e8;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #1558b8;
+            transform: translateY(-2px);
+        }
+
+        /* 결과 표시 영역 스타일 */
+        #resultContainer {
+            margin-top: 30px;
+            display: none; /* 초기에는 숨김 */
+        }
+
+        #resultContainer h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .result-box {
+            display: flex;
+            gap: 10px;
+        }
+
+        #downloadLink {
+            flex-grow: 1;
+            padding: 12px 15px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            color: #333;
+            overflow-x: auto; /* 링크가 길 경우 스크롤 */
+        }
+
+        #copyButton {
+            background-color: #34a853;
+        }
+
+        #copyButton:hover {
+            background-color: #2c8c42;
+        }
+
+        #copyMessage {
+            margin-top: 10px;
+            color: #34a853;
+            font-weight: 500;
+            height: 20px;
+            transition: opacity 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>구글 드라이브 직접 다운로드 링크 변환기</h1>
+        <p>파일의 '공유' 설정이 '링크가 있는 모든 사용자'로 되어 있는지 확인하세요.<br>아래에 공유 링크를 붙여넣고 '변환하기' 버튼을 누르세요.</p>
+        
+        <div class="input-group">
+            <input type="text" id="originalLink" placeholder="https://drive.google.com/file/d/.../view?usp=sharing">
+            <button onclick="convertLink()">변환하기</button>
+        </div>
+
+        <div id="resultContainer">
+            <h2>생성된 다운로드 링크</h2>
+            <div class="result-box">
+                <input type="text" id="downloadLink" readonly>
+                <button id="copyButton" onclick="copyToClipboard()">복사</button>
+            </div>
+            <p id="copyMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        // DOM 요소 가져오기
+        const originalLinkInput = document.getElementById('originalLink');
+        const resultContainer = document.getElementById('resultContainer');
+        const downloadLinkInput = document.getElementById('downloadLink');
+        const copyMessage = document.getElementById('copyMessage');
+
+        function convertLink() {
+            const originalLink = originalLinkInput.value.trim();
+            
+            // 링크가 비어있는지 확인
+            if (!originalLink) {
+                alert('구글 드라이브 링크를 입력해주세요.');
+                return;
+            }
+
+            // 정규 표현식을 사용하여 파일 ID 추출
+            // /file/d/ 와 /view 사이의 문자열을 찾습니다.
+            const regex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+            const match = originalLink.match(regex);
+
+            if (match && match[1]) {
+                const fileId = match[1];
+                // 직접 다운로드 링크 형식으로 조합
+                const downloadLink = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                
+                // 결과 표시
+                downloadLinkInput.value = downloadLink;
+                resultContainer.style.display = 'block';
+                copyMessage.textContent = ''; // 이전 복사 메시지 초기화
+            } else {
+                // 유효하지 않은 링크일 경우
+                alert('유효한 구글 드라이브 파일 공유 링크가 아닙니다.\n링크 형식을 확인해주세요 (예: .../file/d/FILE_ID/view).');
+                resultContainer.style.display = 'none';
+            }
+        }
+
+        function copyToClipboard() {
+            // 다운로드 링크 텍스트 선택
+            downloadLinkInput.select();
+            // 모바일 기기 호환성을 위한 코드
+            downloadLinkInput.setSelectionRange(0, 99999); 
+
+            try {
+                // Clipboard API를 사용하여 복사
+                navigator.clipboard.writeText(downloadLinkInput.value).then(() => {
+                    // 복사 성공 시 메시지 표시
+                    copyMessage.textContent = '클립보드에 복사되었습니다!';
+                    // 2초 후에 메시지 숨기기
+                    setTimeout(() => {
+                        copyMessage.textContent = '';
+                    }, 2000);
+                }).catch(err => {
+                    // 복사 실패 시
+                    console.error('클립보드 복사 실패:', err);
+                    copyMessage.textContent = '복사에 실패했습니다.';
+                });
+            } catch (err) {
+                 // 오래된 브라우저를 위한 대체 방법
+                document.execCommand('copy');
+                copyMessage.textContent = '클립보드에 복사되었습니다!';
+                setTimeout(() => {
+                    copyMessage.textContent = '';
+                }, 2000);
+            }
+        }
+
+        // Enter 키를 눌렀을 때도 변환 실행
+        originalLinkInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                convertLink();
+            }
+        });
+    </script>
+
+</body>
+</html>
