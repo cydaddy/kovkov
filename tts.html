@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>텍스트 음성 변환기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        select, input[type="range"] {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .range-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-speak {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-speak:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-pause {
+            background: #ffa726;
+            color: white;
+        }
+
+        .btn-pause:hover {
+            background: #fb8c00;
+        }
+
+        .btn-stop {
+            background: #ef5350;
+            color: white;
+        }
+
+        .btn-stop:hover {
+            background: #e53935;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .status.speaking {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status.paused {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔊 텍스트 음성 변환기</h1>
+        
+        <div class="input-group">
+            <label for="textInput">읽을 텍스트를 입력하세요:</label>
+            <textarea id="textInput" placeholder="여기에 텍스트를 입력하세요...">안녕하세요! Web Speech API를 사용한 텍스트 음성 변환기입니다.</textarea>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="voiceSelect">음성 선택:</label>
+                <select id="voiceSelect"></select>
+            </div>
+
+            <div class="control-group">
+                <label for="rateInput">속도: <span class="range-value" id="rateValue">1.0</span></label>
+                <input type="range" id="rateInput" min="0.5" max="2" step="0.1" value="1">
+            </div>
+
+            <div class="control-group">
+                <label for="pitchInput">음높이: <span class="range-value" id="pitchValue">1.0</span></label>
+                <input type="range" id="pitchInput" min="0" max="2" step="0.1" value="1">
+            </div>
+
+            <div class="control-group">
+                <label for="volumeInput">볼륨: <span class="range-value" id="volumeValue">1.0</span></label>
+                <input type="range" id="volumeInput" min="0" max="1" step="0.1" value="1">
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-speak" id="speakBtn">▶️ 읽기</button>
+            <button class="btn-pause" id="pauseBtn" disabled>⏸️ 일시정지</button>
+            <button class="btn-stop" id="stopBtn" disabled>⏹️ 정지</button>
+        </div>
+
+        <div class="status" id="status">준비됨</div>
+    </div>
+
+    <script>
+        // Web Speech API 지원 확인
+        if (!('speechSynthesis' in window)) {
+            alert('죄송합니다. 이 브라우저는 Web Speech API를 지원하지 않습니다.');
+        }
+
+        const synth = window.speechSynthesis;
+        let voices = [];
+        let currentUtterance = null;
+
+        // DOM 요소
+        const textInput = document.getElementById('textInput');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const rateInput = document.getElementById('rateInput');
+        const pitchInput = document.getElementById('pitchInput');
+        const volumeInput = document.getElementById('volumeInput');
+        const rateValue = document.getElementById('rateValue');
+        const pitchValue = document.getElementById('pitchValue');
+        const volumeValue = document.getElementById('volumeValue');
+        const speakBtn = document.getElementById('speakBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const status = document.getElementById('status');
+
+        // 음성 목록 로드
+        function loadVoices() {
+            voices = synth.getVoices();
+            voiceSelect.innerHTML = '';
+
+            // 한국어 음성 우선 정렬
+            const koreanVoices = voices.filter(voice => voice.lang.startsWith('ko'));
+            const otherVoices = voices.filter(voice => !voice.lang.startsWith('ko'));
+            const sortedVoices = [...koreanVoices, ...otherVoices];
+
+            sortedVoices.forEach((voice, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                if (voice.default) {
+                    option.textContent += ' - 기본';
+                }
+                voiceSelect.appendChild(option);
+            });
+
+            // 한국어 음성이 있으면 첫 번째 한국어 음성 선택
+            if (koreanVoices.length > 0) {
+                const koreanIndex = voices.indexOf(koreanVoices[0]);
+                voiceSelect.value = koreanIndex;
+            }
+        }
+
+        // 음성 목록 로드 (브라우저마다 타이밍이 다를 수 있음)
+        loadVoices();
+        if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = loadVoices;
+        }
+
+        // 페이지 로드 시 음성 엔진 사전 초기화 (초기 지연 방지)
+        window.addEventListener('load', () => {
+            // 실제로 소리가 나는 워밍업 (볼륨을 낮춰서)
+            const warmupUtterance = new SpeechSynthesisUtterance('.');
+            warmupUtterance.volume = 0.01; // 거의 들리지 않게
+            warmupUtterance.rate = 10; // 빠르게
+            warmupUtterance.pitch = 1;
+            
+            synth.speak(warmupUtterance);
+        });
+
+        // 사용자 인터랙션 시에도 워밍업
+        let isWarmedUp = false;
+        document.body.addEventListener('click', () => {
+            if (!isWarmedUp) {
+                const warmup = new SpeechSynthesisUtterance('.');
+                warmup.volume = 0.01;
+                warmup.rate = 10;
+                synth.speak(warmup);
+                isWarmedUp = true;
+            }
+        }, { once: true });
+
+        // 슬라이더 값 표시 업데이트
+        rateInput.addEventListener('input', (e) => {
+            rateValue.textContent = e.target.value;
+        });
+
+        pitchInput.addEventListener('input', (e) => {
+            pitchValue.textContent = e.target.value;
+        });
+
+        volumeInput.addEventListener('input', (e) => {
+            volumeValue.textContent = e.target.value;
+        });
+
+        // 읽기 함수
+        function speak() {
+            if (synth.speaking) {
+                synth.cancel();
+            }
+
+            const text = textInput.value.trim();
+            if (text === '') {
+                alert('텍스트를 입력해주세요.');
+                return;
+            }
+
+            // 해결책 1: 더미 음성 먼저 재생하여 오디오 초기화
+            const dummyUtterance = new SpeechSynthesisUtterance('음');
+            dummyUtterance.volume = 0.01;
+            dummyUtterance.rate = 10;
+            
+            dummyUtterance.onend = () => {
+                // 더미가 끝난 후 실제 텍스트 읽기
+                // 해결책 2: 앞에 충분한 침묵 추가
+                const textWithPrefix = ', , , ' + text;
+                
+                currentUtterance = new SpeechSynthesisUtterance(textWithPrefix);
+                const selectedVoice = voices[voiceSelect.value];
+                
+                currentUtterance.voice = selectedVoice;
+                currentUtterance.rate = parseFloat(rateInput.value);
+                currentUtterance.pitch = parseFloat(pitchInput.value);
+                currentUtterance.volume = parseFloat(volumeInput.value);
+
+                // 이벤트 리스너
+                currentUtterance.onstart = () => {
+                    status.textContent = '읽는 중...';
+                    status.className = 'status speaking';
+                    speakBtn.disabled = true;
+                    pauseBtn.disabled = false;
+                    stopBtn.disabled = false;
+                    pauseBtn.textContent = '⏸️ 일시정지';
+                };
+
+                currentUtterance.onend = () => {
+                    status.textContent = '읽기 완료';
+                    status.className = 'status';
+                    resetButtons();
+                };
+
+                currentUtterance.onerror = (event) => {
+                    status.textContent = `오류: ${event.error}`;
+                    status.className = 'status';
+                    resetButtons();
+                };
+
+                synth.speak(currentUtterance);
+            };
+
+            // 상태 먼저 업데이트
+            status.textContent = '준비 중...';
+            status.className = 'status';
+            
+            synth.speak(dummyUtterance);
+        }
+
+        // 일시정지/재개 함수
+        function togglePause() {
+            if (synth.speaking && !synth.paused) {
+                synth.pause();
+                pauseBtn.textContent = '▶️ 재개';
+                status.textContent = '일시정지됨';
+                status.className = 'status paused';
+            } else if (synth.paused) {
+                synth.resume();
+                pauseBtn.textContent = '⏸️ 일시정지';
+                status.textContent = '읽는 중...';
+                status.className = 'status speaking';
+            }
+        }
+
+        // 정지 함수
+        function stop() {
+            synth.cancel();
+            status.textContent = '정지됨';
+            status.className = 'status';
+            resetButtons();
+        }
+
+        // 버튼 상태 초기화
+        function resetButtons() {
+            speakBtn.disabled = false;
+            pauseBtn.disabled = true;
+            stopBtn.disabled = true;
+            pauseBtn.textContent = '⏸️ 일시정지';
+        }
+
+        // 이벤트 리스너 등록
+        speakBtn.addEventListener('click', speak);
+        pauseBtn.addEventListener('click', togglePause);
+        stopBtn.addEventListener('click', stop);
+
+        // Enter 키로 읽기 시작 (Ctrl + Enter)
+        textInput.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                speak();
+            }
+        });
+    </script>
+</body>
+</html>
