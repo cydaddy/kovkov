@@ -2,199 +2,458 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>텍스트 에디터</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Text Editor</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
+    :root {
+      --primary-color: #4f46e5;
+      --bg-color: #f3f4f6;
+      --toolbar-bg: rgba(255, 255, 255, 0.95);
+      --text-color: #1f2937;
+      --border-color: #e5e7eb;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0; padding: 0;
       height: 100vh;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      background: #f0f0f0;
+      background-color: var(--bg-color);
+      font-family: 'Noto Sans KR', sans-serif;
+      color: var(--text-color);
     }
+
+    /* --- Toolbar Area --- */
     #toolbar {
-      padding: 10px;
-      background: #f0f0f0;
-      font-family: sans-serif;
-      position: relative;
       flex: 0 0 auto;
+      background: var(--toolbar-bg);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 20px;
+      box-shadow: var(--shadow);
+      z-index: 100;
+      transition: transform 0.3s ease;
     }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-right: 20px;
+      border-right: 1px solid var(--border-color);
+    }
+    .control-group:last-child { border-right: none; }
+    .control-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Inputs & Sliders */
+    input[type="range"] {
+      width: 100px;
+      cursor: pointer;
+      accent-color: var(--primary-color);
+    }
+    input[type="number"] {
+      width: 50px;
+      padding: 4px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      text-align: center;
+      font-family: inherit;
+    }
+    
+    /* Color Picker Style */
+    .color-wrapper {
+      position: relative;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--border-color);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .color-wrapper:hover { transform: scale(1.1); border-color: var(--primary-color); }
+    input[type="color"] {
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      padding: 0; margin: 0;
+      border: none; cursor: pointer;
+    }
+
+    /* Icon Buttons (Alignment, Bold) */
+    .btn-group {
+      display: flex;
+      background: #eef2ff; /* Light indigo bg */
+      border-radius: 8px;
+      padding: 2px;
+    }
+    .icon-btn {
+      background: transparent;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #6b7280;
+      font-size: 1.1rem;
+      transition: all 0.2s;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,0.5); color: var(--primary-color); }
+    .icon-btn.active {
+      background: white;
+      color: var(--primary-color);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      font-weight: bold;
+    }
+
+    /* --- Editor Area --- */
     #editorContainer {
       flex: 1 1 auto;
+      position: relative;
       overflow: hidden;
+      display: flex;
+      justify-content: center; /* Initial alignment handled by JS */
     }
+
     #editor {
       width: 100%; height: 100%;
       outline: none;
-      word-wrap: break-word;
-      white-space: pre-wrap;
-      font-family: sans-serif;
-      box-sizing: border-box;
+      border: none;
+      padding: 20px;
       display: flex;
       flex-direction: column;
+      /* 텍스트 줄바꿈 및 공백 처리 */
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      overflow-y: auto; 
     }
-    #toggleToolbar {
+
+    /* --- Toggle Button (F2) --- */
+    #toggleToolbarBtn {
       position: fixed;
-      top: 10px; right: 10px;
+      bottom: 20px; right: 20px;
+      width: 50px; height: 50px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
       z-index: 2000;
+      transition: transform 0.2s;
     }
+    #toggleToolbarBtn:hover { transform: scale(1.1); }
+    #toggleToolbarBtn:active { transform: scale(0.95); }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
   </style>
 </head>
 <body>
-  <button id="toggleToolbar">설정 토글 (F2)</button>
+
+  <button id="toggleToolbarBtn" title="설정 토글 (F2)">
+    <i class="ri-settings-3-fill"></i>
+  </button>
+
   <div id="toolbar">
-    <div id="leftControls">
-      글자 크기:
-      <input type="range" id="fontSizeInput" value="20" min="5" max="300">
-      <input type="number" id="fontSizeNumber" value="20" min="5" max="300"> px
-      배경 색: <input type="color" id="bgColorInput" value="#ffffff">
-      글자 색: <input type="color" id="textColorInput" value="#000000">
-      굵게: <input type="checkbox" id="boldInput">
-      가로 정렬:
-      <select id="hAlignSelect">
-        <option value="left">왼쪽</option>
-        <option value="center">가운데</option>
-        <option value="right">오른쪽</option>
-      </select>
-      세로 정렬:
-      <select id="vAlignSelect">
-        <option value="flex-start">위</option>
-        <option value="center">중간</option>
-        <option value="flex-end">아래</option>
-      </select>
-      여백:
+    
+    <div class="control-group">
+      <label><i class="ri-font-size"></i> 크기</label>
+      <input type="range" id="fontSizeInput" value="40" min="10" max="300">
+      <input type="number" id="fontSizeNumber" value="40" min="10" max="300">
+      
+      <div class="btn-group" style="margin-left: 10px;">
+        <button id="boldBtn" class="icon-btn" title="굵게"><i class="ri-bold"></i></button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label><i class="ri-palette-line"></i> 색상</label>
+      <div class="color-wrapper" title="배경색">
+        <input type="color" id="bgColorInput" value="#ffffff">
+      </div>
+      <div class="color-wrapper" title="글자색" style="border-color: #6b7280;">
+        <input type="color" id="textColorInput" value="#000000">
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>가로</label>
+      <div class="btn-group" id="hAlignGroup">
+        <button class="icon-btn" data-value="left" title="왼쪽 정렬 (Ctrl+Shift+L)"><i class="ri-align-left"></i></button>
+        <button class="icon-btn" data-value="center" title="가운데 정렬 (Ctrl+Shift+C)"><i class="ri-align-center"></i></button>
+        <button class="icon-btn" data-value="right" title="오른쪽 정렬 (Ctrl+Shift+R)"><i class="ri-align-right"></i></button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>세로</label>
+      <div class="btn-group" id="vAlignGroup">
+        <button class="icon-btn" data-value="flex-start" title="위 (Alt+Shift+Q)"><i class="ri-align-top"></i></button>
+        <button class="icon-btn" data-value="center" title="중간 (Alt+Shift+A)"><i class="ri-align-vertically"></i></button>
+        <button class="icon-btn" data-value="flex-end" title="아래 (Alt+Shift+Z)"><i class="ri-align-bottom"></i></button>
+      </div>
+    </div>
+
+    <div class="control-group" style="border:none;">
+      <label><i class="ri-layout-right-line"></i> 여백</label>
       <input type="range" id="marginInput" value="10" min="0" max="100">
-      <input type="number" id="marginNumber" value="10" min="0" max="100"> px
+      <input type="number" id="marginNumber" value="10" min="0" max="100">
     </div>
   </div>
+
   <div id="editorContainer">
-    <div id="editor" contenteditable="true" spellcheck="false"></div>
+    <div id="editor" contenteditable="true" spellcheck="false">
+      여기에 내용을 입력하세요...
+    </div>
   </div>
+
   <script>
-    const storageKey = "textEditorData";
-    const defaultSettings = {
-      fontSize: 20, bgColor: "#ffffff", textColor: "#000000",
-      bold: false, hAlign: "left", vAlign: "flex-start", margin: 10
+    const storageKey = "modernTextEditorData";
+    
+    // 상태 관리 객체
+    const state = {
+      fontSize: 40,
+      bgColor: "#ffffff",
+      textColor: "#000000",
+      isBold: false,
+      hAlign: "center",     // Default center styling
+      vAlign: "center",     // Default center styling
+      margin: 20
     };
 
-    function loadEditorData() {
+    // DOM 요소 참조
+    const els = {
+      editor: document.getElementById('editor'),
+      toolbar: document.getElementById('toolbar'),
+      toggleBtn: document.getElementById('toggleToolbarBtn'),
+      
+      fontSizeRange: document.getElementById('fontSizeInput'),
+      fontSizeNum: document.getElementById('fontSizeNumber'),
+      
+      bgInput: document.getElementById('bgColorInput'),
+      textInput: document.getElementById('textColorInput'),
+      
+      boldBtn: document.getElementById('boldBtn'),
+      
+      hAlignBtns: document.querySelectorAll('#hAlignGroup .icon-btn'),
+      vAlignBtns: document.querySelectorAll('#vAlignGroup .icon-btn'),
+      
+      marginRange: document.getElementById('marginInput'),
+      marginNum: document.getElementById('marginNumber')
+    };
+
+    // 1. 초기화 및 로드
+    function init() {
+      loadData();
+      renderUI();
+      applyStyles();
+      setupEventListeners();
+    }
+
+    // 2. 데이터 로드
+    function loadData() {
       const stored = localStorage.getItem(storageKey);
-      if (!stored) return;
-      try {
-        const data = JSON.parse(stored);
-        const s = data.settings || defaultSettings;
-        document.getElementById('editor').innerText = data.content || '';
-        document.getElementById('fontSizeInput').value = s.fontSize;
-        document.getElementById('fontSizeNumber').value = s.fontSize;
-        document.getElementById('bgColorInput').value = s.bgColor;
-        document.getElementById('textColorInput').value = s.textColor;
-        document.getElementById('boldInput').checked = s.bold;
-        document.getElementById('hAlignSelect').value = s.hAlign;
-        document.getElementById('vAlignSelect').value = s.vAlign;
-        document.getElementById('marginInput').value = s.margin;
-        document.getElementById('marginNumber').value = s.margin;
-      } catch {
-        // ignore
+      if (stored) {
+        try {
+          const data = JSON.parse(stored);
+          if (data.content) els.editor.innerText = data.content;
+          if (data.settings) Object.assign(state, data.settings);
+        } catch(e) { console.error("Load Error", e); }
       }
     }
 
-    function saveEditorData() {
+    // 3. 데이터 저장
+    function saveData() {
       const data = {
-        content: document.getElementById('editor').innerText,
-        settings: {
-          fontSize: parseInt(document.getElementById('fontSizeInput').value) || defaultSettings.fontSize,
-          bgColor: document.getElementById('bgColorInput').value,
-          textColor: document.getElementById('textColorInput').value,
-          bold: document.getElementById('boldInput').checked,
-          hAlign: document.getElementById('hAlignSelect').value,
-          vAlign: document.getElementById('vAlignSelect').value,
-          margin: parseInt(document.getElementById('marginInput').value) || defaultSettings.margin
-        }
+        content: els.editor.innerText,
+        settings: state
       };
       localStorage.setItem(storageKey, JSON.stringify(data));
     }
 
-    function applySettings() {
-      const ed = document.getElementById('editor');
-      const fs = parseInt(document.getElementById('fontSizeInput').value) || defaultSettings.fontSize;
-      ed.style.fontSize = fs + 'px';
-      ed.style.backgroundColor = document.getElementById('bgColorInput').value;
-      ed.style.color = document.getElementById('textColorInput').value;
-      ed.style.fontWeight = document.getElementById('boldInput').checked ? 'bold' : 'normal';
-      ed.style.textAlign = document.getElementById('hAlignSelect').value;
-      ed.style.justifyContent = document.getElementById('vAlignSelect').value;
-      ed.style.padding = (parseInt(document.getElementById('marginInput').value) || defaultSettings.margin) + 'px';
-      let size = fs;
-      while (ed.scrollHeight > ed.clientHeight && size > 5) {
-        size--; ed.style.fontSize = size + 'px';
+    // 4. UI 렌더링 (State -> Input Elements)
+    function renderUI() {
+      els.fontSizeRange.value = state.fontSize;
+      els.fontSizeNum.value = state.fontSize;
+      els.bgInput.value = state.bgColor;
+      els.textInput.value = state.textColor;
+      els.marginRange.value = state.margin;
+      els.marginNum.value = state.margin;
+
+      // 버튼 활성 상태 업데이트
+      els.boldBtn.classList.toggle('active', state.isBold);
+      
+      els.hAlignBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === state.hAlign);
+      });
+      els.vAlignBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === state.vAlign);
+      });
+    }
+
+    // 5. 스타일 적용 (State -> CSS)
+    function applyStyles() {
+      const e = els.editor;
+      
+      // 기본 스타일
+      e.style.backgroundColor = state.bgColor;
+      e.style.color = state.textColor;
+      e.style.fontWeight = state.isBold ? 'bold' : 'normal';
+      e.style.textAlign = state.hAlign;
+      e.style.justifyContent = state.vAlign;
+      e.style.padding = `${state.margin}px`;
+
+      // 폰트 크기 자동 조절 (Overflow 방지 로직)
+      let currentSize = state.fontSize;
+      e.style.fontSize = `${currentSize}px`;
+
+      // 내용이 넘치면 줄어들게 (단, 최소 10px)
+      while (e.scrollHeight > e.clientHeight && currentSize > 10) {
+        currentSize--;
+        e.style.fontSize = `${currentSize}px`;
       }
     }
 
-    // 입력/변경 이벤트 등록
-    const syncList = ['fontSizeInput','fontSizeNumber','marginInput','marginNumber'];
-    syncList.forEach(id => {
-      const el = document.getElementById(id);
-      el.addEventListener('input', () => {
-        if (id === 'fontSizeInput') document.getElementById('fontSizeNumber').value = el.value;
-        if (id === 'fontSizeNumber') document.getElementById('fontSizeInput').value = el.value;
-        if (id === 'marginInput') document.getElementById('marginNumber').value = el.value;
-        if (id === 'marginNumber') document.getElementById('marginInput').value = el.value;
-        applySettings(); saveEditorData();
+    // 6. 이벤트 리스너 설정
+    function setupEventListeners() {
+      
+      // Editor Input
+      els.editor.addEventListener('input', () => {
+        applyStyles(); // 텍스트 입력 시 자동 리사이징을 위해 호출
+        saveData();
       });
-    });
-    ['bgColorInput','textColorInput'].forEach(id => {
-      document.getElementById(id).addEventListener('input', () => { applySettings(); saveEditorData(); });
-    });
-    ['boldInput','hAlignSelect','vAlignSelect'].forEach(id => {
-      document.getElementById(id).addEventListener('change', () => { applySettings(); saveEditorData(); });
-    });
-    document.getElementById('editor').addEventListener('input', () => { applySettings(); saveEditorData(); });
 
-    // 툴바 토글 (F2)
-    document.getElementById('toggleToolbar').addEventListener('click', () => {
-      const tb = document.getElementById('toolbar'), ec = document.getElementById('editorContainer');
-      if (tb.style.display === 'none') { tb.style.display = 'block'; ec.style.flex = '1 1 auto'; }
-      else { tb.style.display = 'none'; ec.style.flex = '1 1 100%'; }
-    });
+      // Font Size
+      const updateFont = (val) => {
+        state.fontSize = parseInt(val);
+        renderUI(); applyStyles(); saveData();
+      };
+      els.fontSizeRange.addEventListener('input', (e) => updateFont(e.target.value));
+      els.fontSizeNum.addEventListener('input', (e) => updateFont(e.target.value));
 
-    window.addEventListener('keydown', e => {
-      // F2: 토글
-      if (e.key === 'F2') { e.preventDefault(); document.getElementById('toggleToolbar').click(); }
-      // 글자 크기 단축
-      if (e.altKey && e.shiftKey && ['e','r'].includes(e.key.toLowerCase())) {
+      // Colors
+      els.bgInput.addEventListener('input', (e) => {
+        state.bgColor = e.target.value;
+        applyStyles(); saveData();
+      });
+      els.textInput.addEventListener('input', (e) => {
+        state.textColor = e.target.value;
+        applyStyles(); saveData();
+      });
+
+      // Bold Toggle
+      els.boldBtn.addEventListener('click', () => {
+        state.isBold = !state.isBold;
+        renderUI(); applyStyles(); saveData();
+      });
+
+      // Alignment (Horizontal)
+      els.hAlignBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.hAlign = btn.dataset.value;
+          renderUI(); applyStyles(); saveData();
+        });
+      });
+
+      // Alignment (Vertical)
+      els.vAlignBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.vAlign = btn.dataset.value;
+          renderUI(); applyStyles(); saveData();
+        });
+      });
+
+      // Margin
+      const updateMargin = (val) => {
+        state.margin = parseInt(val);
+        renderUI(); applyStyles(); saveData();
+      };
+      els.marginRange.addEventListener('input', (e) => updateMargin(e.target.value));
+      els.marginNum.addEventListener('input', (e) => updateMargin(e.target.value));
+
+      // Toolbar Toggle
+      els.toggleBtn.addEventListener('click', toggleToolbar);
+
+      // Window Resize (Recalculate font fit)
+      window.addEventListener('resize', applyStyles);
+
+      // Keyboard Shortcuts
+      window.addEventListener('keydown', handleShortcuts);
+    }
+
+    function toggleToolbar() {
+      const isHidden = els.toolbar.style.display === 'none';
+      if (isHidden) {
+        els.toolbar.style.display = 'flex';
+      } else {
+        els.toolbar.style.display = 'none';
+      }
+    }
+
+    function handleShortcuts(e) {
+      // F2: Toggle Toolbar
+      if (e.key === 'F2') {
         e.preventDefault();
-        const fsEl = document.getElementById('fontSizeInput');
-        let val = parseInt(fsEl.value) || defaultSettings.fontSize;
-        if (e.key.toLowerCase() === 'e' && val < 300) val++;
-        if (e.key.toLowerCase() === 'r' && val > 5) val--;
-        fsEl.value = document.getElementById('fontSizeNumber').value = val;
-        applySettings(); saveEditorData();
+        toggleToolbar();
       }
-      // 세로 정렬 단축
-      if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'q') {
-        e.preventDefault(); document.getElementById('vAlignSelect').value = 'flex-start'; applySettings(); saveEditorData();
-      }
-      if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'a') {
-        e.preventDefault(); document.getElementById('vAlignSelect').value = 'center'; applySettings(); saveEditorData();
-      }
-      if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'z') {
-        e.preventDefault(); document.getElementById('vAlignSelect').value = 'flex-end'; applySettings(); saveEditorData();
-      }
-      // 가로 정렬 단축
-      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'l') {
-        e.preventDefault(); document.getElementById('hAlignSelect').value = 'left'; applySettings(); saveEditorData();
-      }
-      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'c') {
-        e.preventDefault(); document.getElementById('hAlignSelect').value = 'center'; applySettings(); saveEditorData();
-      }
-      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'r') {
-        e.preventDefault(); document.getElementById('hAlignSelect').value = 'right'; applySettings(); saveEditorData();
-      }
-    });
 
-    window.addEventListener('resize', applySettings);
-    loadEditorData(); applySettings();
+      // Alt + Shift + (Q/A/Z) -> Vertical Align
+      if (e.altKey && e.shiftKey) {
+        const k = e.key.toLowerCase();
+        if (k === 'q') state.vAlign = 'flex-start';
+        if (k === 'a') state.vAlign = 'center';
+        if (k === 'z') state.vAlign = 'flex-end';
+        
+        // Font Size Shortcurt (E/R)
+        if (k === 'e' && state.fontSize < 300) state.fontSize++;
+        if (k === 'r' && state.fontSize > 10) state.fontSize--;
+        
+        renderUI(); applyStyles(); saveData();
+      }
+
+      // Ctrl + Shift + (L/C/R) -> Horizontal Align
+      if (e.ctrlKey && e.shiftKey) {
+        const k = e.key.toLowerCase();
+        e.preventDefault(); // Prevent default browser shortcuts
+        if (k === 'l') state.hAlign = 'left';
+        if (k === 'c') state.hAlign = 'center';
+        if (k === 'r') state.hAlign = 'right';
+        
+        renderUI(); applyStyles(); saveData();
+      }
+    }
+
+    // Start App
+    init();
+
   </script>
 </body>
 </html>
