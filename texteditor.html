@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Modern Text Editor</title>
+  <title>Personal Text Editor</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,7 @@
     :root {
       --primary-color: #4f46e5;
       --bg-color: #f3f4f6;
-      --toolbar-bg: rgba(255, 255, 255, 0.95);
+      /* --toolbar-bg 제거됨 (패턴으로 대체) */
       --text-color: #1f2937;
       --border-color: #e5e7eb;
       --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -33,12 +33,17 @@
       color: var(--text-color);
     }
 
-    /* --- Toolbar Area --- */
+    /* --- Toolbar Area (변경된 부분) --- */
     #toolbar {
       flex: 0 0 auto;
-      background: var(--toolbar-bg);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border-color);
+      /* 배경색 및 패턴 적용 */
+      background-color: #ffffff;
+      background-image: 
+          linear-gradient(rgba(79, 70, 229, 0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(79, 70, 229, 0.08) 1px, transparent 1px);
+      background-size: 15px 15px; /* 격자 크기 */
+      
+      border-bottom: 1px solid #d1d5db; /* 테두리 조금 더 진하게 */
       padding: 12px 20px;
       display: flex;
       flex-wrap: wrap;
@@ -54,13 +59,13 @@
       align-items: center;
       gap: 10px;
       padding-right: 20px;
-      border-right: 1px solid var(--border-color);
+      border-right: 1px solid #d1d5db; /* 구분선도 조금 더 진하게 */
     }
     .control-group:last-child { border-right: none; }
     .control-group label {
       font-size: 0.85rem;
-      font-weight: 600;
-      color: #6b7280;
+      font-weight: 700; /* 라벨 가독성을 위해 조금 더 굵게 */
+      color: #4b5563;
       display: flex;
       align-items: center;
       gap: 5px;
@@ -90,6 +95,7 @@
       border: 2px solid var(--border-color);
       cursor: pointer;
       transition: transform 0.2s;
+      background: white;
     }
     .color-wrapper:hover { transform: scale(1.1); border-color: var(--primary-color); }
     input[type="color"] {
@@ -100,10 +106,11 @@
       border: none; cursor: pointer;
     }
 
-    /* Icon Buttons (Alignment, Bold) */
+    /* Icon Buttons */
     .btn-group {
       display: flex;
-      background: #eef2ff; /* Light indigo bg */
+      background: rgba(255, 255, 255, 0.8); /* 버튼 그룹 배경 투명도 조절 */
+      border: 1px solid var(--border-color);
       border-radius: 8px;
       padding: 2px;
     }
@@ -117,12 +124,11 @@
       font-size: 1.1rem;
       transition: all 0.2s;
     }
-    .icon-btn:hover { background: rgba(255,255,255,0.5); color: var(--primary-color); }
+    .icon-btn:hover { background: rgba(79, 70, 229, 0.1); color: var(--primary-color); }
     .icon-btn.active {
-      background: white;
-      color: var(--primary-color);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-      font-weight: bold;
+      background: var(--primary-color);
+      color: white;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
 
     /* --- Editor Area --- */
@@ -131,7 +137,7 @@
       position: relative;
       overflow: hidden;
       display: flex;
-      justify-content: center; /* Initial alignment handled by JS */
+      justify-content: center; 
     }
 
     #editor {
@@ -141,7 +147,6 @@
       padding: 20px;
       display: flex;
       flex-direction: column;
-      /* 텍스트 줄바꿈 및 공백 처리 */
       word-wrap: break-word;
       white-space: pre-wrap;
       overflow-y: auto; 
@@ -230,67 +235,57 @@
   </div>
 
   <div id="editorContainer">
-    <div id="editor" contenteditable="true" spellcheck="false">
-      여기에 내용을 입력하세요...
-    </div>
+    <div id="editor" contenteditable="true" spellcheck="false"></div>
   </div>
 
   <script>
-    const storageKey = "modernTextEditorData";
+    const storageKey = "personalTextEditorData";
     
-    // 상태 관리 객체
     const state = {
       fontSize: 40,
       bgColor: "#ffffff",
       textColor: "#000000",
       isBold: false,
-      hAlign: "center",     // Default center styling
-      vAlign: "center",     // Default center styling
+      hAlign: "center",
+      vAlign: "center",
       margin: 20
     };
 
-    // DOM 요소 참조
     const els = {
       editor: document.getElementById('editor'),
       toolbar: document.getElementById('toolbar'),
       toggleBtn: document.getElementById('toggleToolbarBtn'),
-      
       fontSizeRange: document.getElementById('fontSizeInput'),
       fontSizeNum: document.getElementById('fontSizeNumber'),
-      
       bgInput: document.getElementById('bgColorInput'),
       textInput: document.getElementById('textColorInput'),
-      
       boldBtn: document.getElementById('boldBtn'),
-      
       hAlignBtns: document.querySelectorAll('#hAlignGroup .icon-btn'),
       vAlignBtns: document.querySelectorAll('#vAlignGroup .icon-btn'),
-      
       marginRange: document.getElementById('marginInput'),
       marginNum: document.getElementById('marginNumber')
     };
 
-    // 1. 초기화 및 로드
     function init() {
       loadData();
       renderUI();
       applyStyles();
       setupEventListeners();
+      els.editor.focus(); // 시작 시 바로 입력 가능하게 포커스
     }
 
-    // 2. 데이터 로드
     function loadData() {
       const stored = localStorage.getItem(storageKey);
       if (stored) {
         try {
           const data = JSON.parse(stored);
+          // 저장된 내용이 있을 때만 불러옴 (없으면 빈 상태 유지)
           if (data.content) els.editor.innerText = data.content;
           if (data.settings) Object.assign(state, data.settings);
         } catch(e) { console.error("Load Error", e); }
       }
     }
 
-    // 3. 데이터 저장
     function saveData() {
       const data = {
         content: els.editor.innerText,
@@ -299,7 +294,6 @@
       localStorage.setItem(storageKey, JSON.stringify(data));
     }
 
-    // 4. UI 렌더링 (State -> Input Elements)
     function renderUI() {
       els.fontSizeRange.value = state.fontSize;
       els.fontSizeNum.value = state.fontSize;
@@ -308,7 +302,6 @@
       els.marginRange.value = state.margin;
       els.marginNum.value = state.margin;
 
-      // 버튼 활성 상태 업데이트
       els.boldBtn.classList.toggle('active', state.isBold);
       
       els.hAlignBtns.forEach(btn => {
@@ -319,11 +312,9 @@
       });
     }
 
-    // 5. 스타일 적용 (State -> CSS)
     function applyStyles() {
       const e = els.editor;
       
-      // 기본 스타일
       e.style.backgroundColor = state.bgColor;
       e.style.color = state.textColor;
       e.style.fontWeight = state.isBold ? 'bold' : 'normal';
@@ -331,27 +322,21 @@
       e.style.justifyContent = state.vAlign;
       e.style.padding = `${state.margin}px`;
 
-      // 폰트 크기 자동 조절 (Overflow 방지 로직)
       let currentSize = state.fontSize;
       e.style.fontSize = `${currentSize}px`;
 
-      // 내용이 넘치면 줄어들게 (단, 최소 10px)
       while (e.scrollHeight > e.clientHeight && currentSize > 10) {
         currentSize--;
         e.style.fontSize = `${currentSize}px`;
       }
     }
 
-    // 6. 이벤트 리스너 설정
     function setupEventListeners() {
-      
-      // Editor Input
       els.editor.addEventListener('input', () => {
-        applyStyles(); // 텍스트 입력 시 자동 리사이징을 위해 호출
+        applyStyles(); 
         saveData();
       });
 
-      // Font Size
       const updateFont = (val) => {
         state.fontSize = parseInt(val);
         renderUI(); applyStyles(); saveData();
@@ -359,7 +344,6 @@
       els.fontSizeRange.addEventListener('input', (e) => updateFont(e.target.value));
       els.fontSizeNum.addEventListener('input', (e) => updateFont(e.target.value));
 
-      // Colors
       els.bgInput.addEventListener('input', (e) => {
         state.bgColor = e.target.value;
         applyStyles(); saveData();
@@ -369,13 +353,11 @@
         applyStyles(); saveData();
       });
 
-      // Bold Toggle
       els.boldBtn.addEventListener('click', () => {
         state.isBold = !state.isBold;
         renderUI(); applyStyles(); saveData();
       });
 
-      // Alignment (Horizontal)
       els.hAlignBtns.forEach(btn => {
         btn.addEventListener('click', () => {
           state.hAlign = btn.dataset.value;
@@ -383,7 +365,6 @@
         });
       });
 
-      // Alignment (Vertical)
       els.vAlignBtns.forEach(btn => {
         btn.addEventListener('click', () => {
           state.vAlign = btn.dataset.value;
@@ -391,7 +372,6 @@
         });
       });
 
-      // Margin
       const updateMargin = (val) => {
         state.margin = parseInt(val);
         renderUI(); applyStyles(); saveData();
@@ -399,13 +379,8 @@
       els.marginRange.addEventListener('input', (e) => updateMargin(e.target.value));
       els.marginNum.addEventListener('input', (e) => updateMargin(e.target.value));
 
-      // Toolbar Toggle
       els.toggleBtn.addEventListener('click', toggleToolbar);
-
-      // Window Resize (Recalculate font fit)
       window.addEventListener('resize', applyStyles);
-
-      // Keyboard Shortcuts
       window.addEventListener('keydown', handleShortcuts);
     }
 
@@ -419,41 +394,30 @@
     }
 
     function handleShortcuts(e) {
-      // F2: Toggle Toolbar
       if (e.key === 'F2') {
         e.preventDefault();
         toggleToolbar();
       }
-
-      // Alt + Shift + (Q/A/Z) -> Vertical Align
       if (e.altKey && e.shiftKey) {
         const k = e.key.toLowerCase();
         if (k === 'q') state.vAlign = 'flex-start';
         if (k === 'a') state.vAlign = 'center';
         if (k === 'z') state.vAlign = 'flex-end';
-        
-        // Font Size Shortcurt (E/R)
         if (k === 'e' && state.fontSize < 300) state.fontSize++;
         if (k === 'r' && state.fontSize > 10) state.fontSize--;
-        
         renderUI(); applyStyles(); saveData();
       }
-
-      // Ctrl + Shift + (L/C/R) -> Horizontal Align
       if (e.ctrlKey && e.shiftKey) {
         const k = e.key.toLowerCase();
-        e.preventDefault(); // Prevent default browser shortcuts
+        e.preventDefault(); 
         if (k === 'l') state.hAlign = 'left';
         if (k === 'c') state.hAlign = 'center';
         if (k === 'r') state.hAlign = 'right';
-        
         renderUI(); applyStyles(); saveData();
       }
     }
 
-    // Start App
     init();
-
   </script>
 </body>
 </html>
