@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Personal Text Editor</title>
+  <title>Personal Text Editor - Optimized</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,6 @@
     :root {
       --primary-color: #4f46e5;
       --bg-color: #f3f4f6;
-      /* --toolbar-bg 제거됨 (패턴으로 대체) */
       --text-color: #1f2937;
       --border-color: #e5e7eb;
       --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -33,83 +32,61 @@
       color: var(--text-color);
     }
 
-    /* --- Toolbar Area (변경된 부분) --- */
     #toolbar {
       flex: 0 0 auto;
-      /* 배경색 및 패턴 적용 */
       background-color: #ffffff;
       background-image: 
-          linear-gradient(rgba(79, 70, 229, 0.08) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(79, 70, 229, 0.08) 1px, transparent 1px);
-      background-size: 15px 15px; /* 격자 크기 */
-      
-      border-bottom: 1px solid #d1d5db; /* 테두리 조금 더 진하게 */
+          linear-gradient(rgba(79, 70, 229, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(79, 70, 229, 0.05) 1px, transparent 1px);
+      background-size: 15px 15px;
+      border-bottom: 1px solid #d1d5db;
       padding: 12px 20px;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 20px;
+      gap: 15px;
       box-shadow: var(--shadow);
       z-index: 100;
-      transition: transform 0.3s ease;
     }
 
     .control-group {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding-right: 20px;
-      border-right: 1px solid #d1d5db; /* 구분선도 조금 더 진하게 */
+      padding-right: 15px;
+      border-right: 1px solid #d1d5db;
     }
     .control-group:last-child { border-right: none; }
     .control-group label {
-      font-size: 0.85rem;
-      font-weight: 700; /* 라벨 가독성을 위해 조금 더 굵게 */
+      font-size: 0.8rem;
+      font-weight: 700;
       color: #4b5563;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
     }
 
-    /* Inputs & Sliders */
-    input[type="range"] {
-      width: 100px;
-      cursor: pointer;
-      accent-color: var(--primary-color);
-    }
-    input[type="number"] {
-      width: 50px;
-      padding: 4px;
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      text-align: center;
-      font-family: inherit;
-    }
+    input[type="range"] { width: 80px; cursor: pointer; accent-color: var(--primary-color); }
+    input[type="number"] { width: 45px; padding: 3px; border: 1px solid var(--border-color); border-radius: 4px; text-align: center; }
     
-    /* Color Picker Style */
     .color-wrapper {
       position: relative;
-      width: 32px; height: 32px;
+      width: 28px; height: 28px;
       border-radius: 50%;
       overflow: hidden;
       border: 2px solid var(--border-color);
       cursor: pointer;
-      transition: transform 0.2s;
-      background: white;
     }
-    .color-wrapper:hover { transform: scale(1.1); border-color: var(--primary-color); }
     input[type="color"] {
       position: absolute;
       top: -50%; left: -50%;
       width: 200%; height: 200%;
-      padding: 0; margin: 0;
       border: none; cursor: pointer;
     }
 
-    /* Icon Buttons */
     .btn-group {
       display: flex;
-      background: rgba(255, 255, 255, 0.8); /* 버튼 그룹 배경 투명도 조절 */
+      background: white;
       border: 1px solid var(--border-color);
       border-radius: 8px;
       padding: 2px;
@@ -117,21 +94,31 @@
     .icon-btn {
       background: transparent;
       border: none;
-      padding: 6px 10px;
+      padding: 5px 8px;
       border-radius: 6px;
       cursor: pointer;
       color: #6b7280;
-      font-size: 1.1rem;
+      font-size: 1rem;
       transition: all 0.2s;
     }
     .icon-btn:hover { background: rgba(79, 70, 229, 0.1); color: var(--primary-color); }
-    .icon-btn.active {
-      background: var(--primary-color);
-      color: white;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-    }
+    .icon-btn.active { background: var(--primary-color); color: white; }
 
-    /* --- Editor Area --- */
+    /* 랜덤 버튼 스타일 */
+    .random-btn {
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .random-btn:hover { background: #e5e7eb; }
+
     #editorContainer {
       flex: 1 1 auto;
       position: relative;
@@ -149,14 +136,13 @@
       flex-direction: column;
       word-wrap: break-word;
       white-space: pre-wrap;
-      overflow-y: auto; 
+      overflow: hidden; /* 스크롤바 절대 생성 방지 */
     }
 
-    /* --- Toggle Button (F2) --- */
     #toggleToolbarBtn {
       position: fixed;
       bottom: 20px; right: 20px;
-      width: 50px; height: 50px;
+      width: 45px; height: 45px;
       border-radius: 50%;
       background: var(--primary-color);
       color: white;
@@ -166,18 +152,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.5rem;
+      font-size: 1.2rem;
       z-index: 2000;
-      transition: transform 0.2s;
     }
-    #toggleToolbarBtn:hover { transform: scale(1.1); }
-    #toggleToolbarBtn:active { transform: scale(0.95); }
-
-    /* Scrollbar Styling */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
   </style>
 </head>
@@ -188,13 +165,12 @@
   </button>
 
   <div id="toolbar">
-    
     <div class="control-group">
       <label><i class="ri-font-size"></i> 크기</label>
       <input type="range" id="fontSizeInput" value="40" min="10" max="300">
       <input type="number" id="fontSizeNumber" value="40" min="10" max="300">
       
-      <div class="btn-group" style="margin-left: 10px;">
+      <div class="btn-group" style="margin-left: 5px;">
         <button id="boldBtn" class="icon-btn" title="굵게"><i class="ri-bold"></i></button>
       </div>
     </div>
@@ -204,33 +180,31 @@
       <div class="color-wrapper" title="배경색">
         <input type="color" id="bgColorInput" value="#ffffff">
       </div>
-      <div class="color-wrapper" title="글자색" style="border-color: #6b7280;">
+      <div class="color-wrapper" title="글자색">
         <input type="color" id="textColorInput" value="#000000">
       </div>
+      <button class="random-btn" id="randomColorBtn">
+        <i class="ri-magic-line"></i> 랜덤 배색
+      </button>
     </div>
 
     <div class="control-group">
-      <label>가로</label>
+      <label>정렬</label>
       <div class="btn-group" id="hAlignGroup">
-        <button class="icon-btn" data-value="left" title="왼쪽 정렬 (Ctrl+Shift+L)"><i class="ri-align-left"></i></button>
-        <button class="icon-btn" data-value="center" title="가운데 정렬 (Ctrl+Shift+C)"><i class="ri-align-center"></i></button>
-        <button class="icon-btn" data-value="right" title="오른쪽 정렬 (Ctrl+Shift+R)"><i class="ri-align-right"></i></button>
+        <button class="icon-btn" data-value="left"><i class="ri-align-left"></i></button>
+        <button class="icon-btn" data-value="center"><i class="ri-align-center"></i></button>
+        <button class="icon-btn" data-value="right"><i class="ri-align-right"></i></button>
       </div>
-    </div>
-
-    <div class="control-group">
-      <label>세로</label>
       <div class="btn-group" id="vAlignGroup">
-        <button class="icon-btn" data-value="flex-start" title="위 (Alt+Shift+Q)"><i class="ri-align-top"></i></button>
-        <button class="icon-btn" data-value="center" title="중간 (Alt+Shift+A)"><i class="ri-align-vertically"></i></button>
-        <button class="icon-btn" data-value="flex-end" title="아래 (Alt+Shift+Z)"><i class="ri-align-bottom"></i></button>
+        <button class="icon-btn" data-value="flex-start"><i class="ri-align-top"></i></button>
+        <button class="icon-btn" data-value="center"><i class="ri-align-vertically"></i></button>
+        <button class="icon-btn" data-value="flex-end"><i class="ri-align-bottom"></i></button>
       </div>
     </div>
 
     <div class="control-group" style="border:none;">
-      <label><i class="ri-layout-right-line"></i> 여백</label>
-      <input type="range" id="marginInput" value="10" min="0" max="100">
-      <input type="number" id="marginNumber" value="10" min="0" max="100">
+      <label>여백</label>
+      <input type="range" id="marginInput" value="20" min="0" max="100">
     </div>
   </div>
 
@@ -239,7 +213,7 @@
   </div>
 
   <script>
-    const storageKey = "personalTextEditorData";
+    const storageKey = "personalTextEditorData_v2";
     
     const state = {
       fontSize: 40,
@@ -254,7 +228,6 @@
     const els = {
       editor: document.getElementById('editor'),
       toolbar: document.getElementById('toolbar'),
-      toggleBtn: document.getElementById('toggleToolbarBtn'),
       fontSizeRange: document.getElementById('fontSizeInput'),
       fontSizeNum: document.getElementById('fontSizeNumber'),
       bgInput: document.getElementById('bgColorInput'),
@@ -263,7 +236,8 @@
       hAlignBtns: document.querySelectorAll('#hAlignGroup .icon-btn'),
       vAlignBtns: document.querySelectorAll('#vAlignGroup .icon-btn'),
       marginRange: document.getElementById('marginInput'),
-      marginNum: document.getElementById('marginNumber')
+      randomBtn: document.getElementById('randomColorBtn'),
+      toggleBtn: document.getElementById('toggleToolbarBtn')
     };
 
     function init() {
@@ -271,83 +245,93 @@
       renderUI();
       applyStyles();
       setupEventListeners();
-      els.editor.focus(); // 시작 시 바로 입력 가능하게 포커스
+      els.editor.focus();
     }
 
-    function loadData() {
-      const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        try {
-          const data = JSON.parse(stored);
-          // 저장된 내용이 있을 때만 불러옴 (없으면 빈 상태 유지)
-          if (data.content) els.editor.innerText = data.content;
-          if (data.settings) Object.assign(state, data.settings);
-        } catch(e) { console.error("Load Error", e); }
-      }
-    }
-
-    function saveData() {
-      const data = {
-        content: els.editor.innerText,
-        settings: state
-      };
-      localStorage.setItem(storageKey, JSON.stringify(data));
-    }
-
-    function renderUI() {
-      els.fontSizeRange.value = state.fontSize;
-      els.fontSizeNum.value = state.fontSize;
-      els.bgInput.value = state.bgColor;
-      els.textInput.value = state.textColor;
-      els.marginRange.value = state.margin;
-      els.marginNum.value = state.margin;
-
-      els.boldBtn.classList.toggle('active', state.isBold);
-      
-      els.hAlignBtns.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.value === state.hAlign);
-      });
-      els.vAlignBtns.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.value === state.vAlign);
-      });
-    }
-
+    // --- 핵심: 성능 최적화된 스타일 적용 (이진 탐색) ---
     function applyStyles() {
       const e = els.editor;
       
+      // 기초 스타일 적용
       e.style.backgroundColor = state.bgColor;
       e.style.color = state.textColor;
-      e.style.fontWeight = state.isBold ? 'bold' : 'normal';
+      e.style.fontWeight = state.isBold ? '700' : '400';
       e.style.textAlign = state.hAlign;
       e.style.justifyContent = state.vAlign;
       e.style.padding = `${state.margin}px`;
 
-      let currentSize = state.fontSize;
-      e.style.fontSize = `${currentSize}px`;
+      // 폰트 크기 최적화 찾기 (이진 탐색 알고리즘)
+      let minSize = 1;
+      let maxSize = state.fontSize; // 설정된 최대값부터 시작
+      let optimalSize = minSize;
 
-      while (e.scrollHeight > e.clientHeight && currentSize > 10) {
-        currentSize--;
-        e.style.fontSize = `${currentSize}px`;
+      // 브라우저 렌더링을 일시적으로 차단하고 계산 (성능 향상)
+      e.style.visibility = 'hidden'; 
+
+      while (minSize <= maxSize) {
+        let mid = Math.floor((minSize + maxSize) / 2);
+        e.style.fontSize = mid + 'px';
+
+        if (e.scrollHeight <= e.clientHeight) {
+          optimalSize = mid;
+          minSize = mid + 1;
+        } else {
+          maxSize = mid - 1;
+        }
       }
+
+      e.style.fontSize = optimalSize + 'px';
+      e.style.visibility = 'visible';
     }
 
+    // --- 랜덤 HSL 배색 기능 ---
+    function setRandomColors() {
+      const hue = Math.floor(Math.random() * 360);
+      
+      // 배경색: 밝은 파스텔 (명도 85-95%)
+      const bgL = 90;
+      state.bgColor = hslToHex(hue, 30, bgL);
+      
+      // 글자색: 동일 톤의 어두운 색 (명도 10-20%)
+      const textL = 20;
+      state.textColor = hslToHex(hue, 40, textL);
+      
+      renderUI();
+      applyStyles();
+      saveData();
+    }
+
+    // HSL을 HEX로 변환하는 헬퍼 함수
+    function hslToHex(h, s, l) {
+      l /= 100;
+      const a = s * Math.min(l, 1 - l) / 100;
+      const f = n => {
+        const k = (n + h / 30) % 12;
+        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color).toString(16).padStart(2, '0');
+      };
+      return `#${f(0)}${f(8)}${f(4)}`;
+    }
+
+    // --- 이벤트 및 유틸리티 ---
     function setupEventListeners() {
       els.editor.addEventListener('input', () => {
-        applyStyles(); 
+        applyStyles();
         saveData();
       });
 
-      const updateFont = (val) => {
-        state.fontSize = parseInt(val);
+      els.randomBtn.addEventListener('click', setRandomColors);
+
+      els.fontSizeRange.addEventListener('input', (e) => {
+        state.fontSize = parseInt(e.target.value);
         renderUI(); applyStyles(); saveData();
-      };
-      els.fontSizeRange.addEventListener('input', (e) => updateFont(e.target.value));
-      els.fontSizeNum.addEventListener('input', (e) => updateFont(e.target.value));
+      });
 
       els.bgInput.addEventListener('input', (e) => {
         state.bgColor = e.target.value;
         applyStyles(); saveData();
       });
+
       els.textInput.addEventListener('input', (e) => {
         state.textColor = e.target.value;
         applyStyles(); saveData();
@@ -372,49 +356,45 @@
         });
       });
 
-      const updateMargin = (val) => {
-        state.margin = parseInt(val);
-        renderUI(); applyStyles(); saveData();
-      };
-      els.marginRange.addEventListener('input', (e) => updateMargin(e.target.value));
-      els.marginNum.addEventListener('input', (e) => updateMargin(e.target.value));
+      els.marginRange.addEventListener('input', (e) => {
+        state.margin = parseInt(e.target.value);
+        applyStyles(); saveData();
+      });
 
-      els.toggleBtn.addEventListener('click', toggleToolbar);
+      els.toggleBtn.addEventListener('click', () => {
+        els.toolbar.style.display = els.toolbar.style.display === 'none' ? 'flex' : 'none';
+      });
+
       window.addEventListener('resize', applyStyles);
-      window.addEventListener('keydown', handleShortcuts);
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'F2') {
+          e.preventDefault();
+          els.toolbar.style.display = els.toolbar.style.display === 'none' ? 'flex' : 'none';
+        }
+      });
     }
 
-    function toggleToolbar() {
-      const isHidden = els.toolbar.style.display === 'none';
-      if (isHidden) {
-        els.toolbar.style.display = 'flex';
-      } else {
-        els.toolbar.style.display = 'none';
+    function renderUI() {
+      els.fontSizeRange.value = state.fontSize;
+      els.fontSizeNum.value = state.fontSize;
+      els.bgInput.value = state.bgColor;
+      els.textInput.value = state.textColor;
+      els.boldBtn.classList.toggle('active', state.isBold);
+      els.hAlignBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.value === state.hAlign));
+      els.vAlignBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.value === state.vAlign));
+    }
+
+    function loadData() {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (data.content) els.editor.innerText = data.content;
+        if (data.settings) Object.assign(state, data.settings);
       }
     }
 
-    function handleShortcuts(e) {
-      if (e.key === 'F2') {
-        e.preventDefault();
-        toggleToolbar();
-      }
-      if (e.altKey && e.shiftKey) {
-        const k = e.key.toLowerCase();
-        if (k === 'q') state.vAlign = 'flex-start';
-        if (k === 'a') state.vAlign = 'center';
-        if (k === 'z') state.vAlign = 'flex-end';
-        if (k === 'e' && state.fontSize < 300) state.fontSize++;
-        if (k === 'r' && state.fontSize > 10) state.fontSize--;
-        renderUI(); applyStyles(); saveData();
-      }
-      if (e.ctrlKey && e.shiftKey) {
-        const k = e.key.toLowerCase();
-        e.preventDefault(); 
-        if (k === 'l') state.hAlign = 'left';
-        if (k === 'c') state.hAlign = 'center';
-        if (k === 'r') state.hAlign = 'right';
-        renderUI(); applyStyles(); saveData();
-      }
+    function saveData() {
+      localStorage.setItem(storageKey, JSON.stringify({ content: els.editor.innerText, settings: state }));
     }
 
     init();
