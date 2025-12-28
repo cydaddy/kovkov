@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Personal Text Editor - Optimized</title>
+  <title>Personal Text Editor - Shortcut Enhanced</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -262,16 +262,17 @@
 
       // 폰트 크기 최적화 찾기 (이진 탐색 알고리즘)
       let minSize = 1;
-      let maxSize = state.fontSize; // 설정된 최대값부터 시작
+      let maxSize = state.fontSize; // 설정된 최대값부터 시작 (단축키로 늘리면 이 값이 늘어남)
       let optimalSize = minSize;
 
-      // 브라우저 렌더링을 일시적으로 차단하고 계산 (성능 향상)
+      // 브라우저 렌더링을 일시적으로 차단하고 계산
       e.style.visibility = 'hidden'; 
 
       while (minSize <= maxSize) {
         let mid = Math.floor((minSize + maxSize) / 2);
         e.style.fontSize = mid + 'px';
 
+        // 내용이 화면보다 크면(스크롤 발생 시), 폰트를 줄여야 함
         if (e.scrollHeight <= e.clientHeight) {
           optimalSize = mid;
           minSize = mid + 1;
@@ -280,19 +281,15 @@
         }
       }
 
+      // 최종 계산된 크기 적용 (스크롤이 안 생기는 최대 크기)
       e.style.fontSize = optimalSize + 'px';
       e.style.visibility = 'visible';
     }
 
-    // --- 랜덤 HSL 배색 기능 ---
     function setRandomColors() {
       const hue = Math.floor(Math.random() * 360);
-      
-      // 배경색: 밝은 파스텔 (명도 85-95%)
       const bgL = 90;
       state.bgColor = hslToHex(hue, 30, bgL);
-      
-      // 글자색: 동일 톤의 어두운 색 (명도 10-20%)
       const textL = 20;
       state.textColor = hslToHex(hue, 40, textL);
       
@@ -301,7 +298,6 @@
       saveData();
     }
 
-    // HSL을 HEX로 변환하는 헬퍼 함수
     function hslToHex(h, s, l) {
       l /= 100;
       const a = s * Math.min(l, 1 - l) / 100;
@@ -313,13 +309,14 @@
       return `#${f(0)}${f(8)}${f(4)}`;
     }
 
-    // --- 이벤트 및 유틸리티 ---
     function setupEventListeners() {
+      // 입력 시 실시간 업데이트
       els.editor.addEventListener('input', () => {
         applyStyles();
         saveData();
       });
 
+      // UI 컨트롤 이벤트 연결
       els.randomBtn.addEventListener('click', setRandomColors);
 
       els.fontSizeRange.addEventListener('input', (e) => {
@@ -366,10 +363,90 @@
       });
 
       window.addEventListener('resize', applyStyles);
+
+      // --- 단축키 로직 ---
       window.addEventListener('keydown', (e) => {
+        
+        // F2: 툴바 토글
         if (e.key === 'F2') {
           e.preventDefault();
           els.toolbar.style.display = els.toolbar.style.display === 'none' ? 'flex' : 'none';
+          return;
+        }
+
+        // 상태 일괄 업데이트용 헬퍼
+        const updateState = () => {
+          renderUI();
+          applyStyles();
+          saveData();
+        };
+
+        const isShift = e.shiftKey;
+        const isCtrl = e.ctrlKey || e.metaKey; // Windows Ctrl 또는 Mac Command
+        const isAlt = e.altKey;
+        const key = e.code; // 키보드 위치 기준 코드값 (KeyE, KeyR ...)
+
+        // 1. Shift + Alt + E : 글씨 커지게 (Max 설정 증가)
+        if (isShift && isAlt && key === 'KeyE') {
+          e.preventDefault();
+          // 최대 300까지 10단위로 증가
+          state.fontSize = Math.min(state.fontSize + 10, 300);
+          updateState();
+        }
+
+        // 2. Shift + Alt + R : 글씨 작아지게
+        if (isShift && isAlt && key === 'KeyR') {
+          e.preventDefault();
+          // 최소 10까지 10단위로 감소
+          state.fontSize = Math.max(state.fontSize - 10, 10);
+          updateState();
+        }
+
+        // 3. Ctrl + B : 글씨 굵게
+        if (isCtrl && !isShift && !isAlt && key === 'KeyB') {
+          e.preventDefault(); // 브라우저 기본 굵게 방지
+          state.isBold = !state.isBold;
+          updateState();
+        }
+
+        // 4. 가로 정렬 그룹
+        // Shift + Ctrl + C : 가로 가운데
+        if (isShift && isCtrl && !isAlt && key === 'KeyC') {
+          e.preventDefault(); // 개발자도구 등 방지
+          state.hAlign = 'center';
+          updateState();
+        }
+        // Shift + Ctrl + L : 왼쪽 정렬
+        if (isShift && isCtrl && !isAlt && key === 'KeyL') {
+          e.preventDefault();
+          state.hAlign = 'left';
+          updateState();
+        }
+        // Shift + Ctrl + R : 오른쪽 정렬
+        if (isShift && isCtrl && !isAlt && key === 'KeyR') {
+          e.preventDefault(); // 강력 새로고침 방지
+          state.hAlign = 'right';
+          updateState();
+        }
+
+        // 5. 세로 정렬 그룹
+        // Shift + Ctrl + Q : 위쪽 정렬
+        if (isShift && isCtrl && !isAlt && key === 'KeyQ') {
+          e.preventDefault();
+          state.vAlign = 'flex-start';
+          updateState();
+        }
+        // Shift + Ctrl + A : 세로 가운데
+        if (isShift && isCtrl && !isAlt && key === 'KeyA') {
+          e.preventDefault();
+          state.vAlign = 'center';
+          updateState();
+        }
+        // Shift + Ctrl + Z : 아래쪽 정렬
+        if (isShift && isCtrl && !isAlt && key === 'KeyZ') {
+          e.preventDefault();
+          state.vAlign = 'flex-end';
+          updateState();
         }
       });
     }
