@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>done</title>
+  <link rel="stylesheet" href="./style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>교실 이름 & To-Do 목록</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 메인 화면 -->
+  <div id="mainApp" class="container">
+    <div class="left">
+      <div class="todo-panel">
+        <div class="todo-controls">
+          <input type="text" id="todoInput" placeholder="새 할 일 입력">
+          <button id="addTextBtn">추가</button>
+          <select id="todoSelect"></select>
+          <button id="addTodoBtn">추가</button>
+        </div>
+        <div id="todoList" class="todo-list"></div>
+      </div>
+      <div class="button-group">
+        <button id="settingBtn">설정</button>
+        <button id="dashboardBtn">대시보드</button>
+      </div>
+    </div>
+    <div class="right">
+      <div class="grid"></div>
+    </div>
+  </div>
+
+  <!-- 대시보드 화면 -->
+  <div id="dashboardView">
+    <div class="dashboard-header">
+      <h1 id="dashMainTitle">대시보드</h1>
+      <div class="dash-header-buttons">
+        <button id="dashSettingBtn">설정</button>
+        <button id="closeDashboardBtn">닫기</button>
+      </div>
+    </div>
+    <div id="dashboardList" class="dashboard-list"></div>
+  </div>
+
+  <!-- 메인 설정 모달 -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <h3>설정</h3>
+
+      <label for="fontSizeSlider">
+        이름 글씨 크기: <span id="fontSizeValue">16</span>px
+      </label><br>
+      <input type="range" id="fontSizeSlider" min="16" max="100" value="16"><br><br>
+
+      <label for="todoFontSizeSlider">
+        할 일 글씨 크기: <span id="todoFontSizeValue">16</span>px
+      </label><br>
+      <input type="range" id="todoFontSizeSlider" min="12" max="100" value="16"><br><br>
+
+      <label for="todoOptionsInput">드롭다운 옵션 (쉼표 구분)</label><br>
+      <textarea id="todoOptionsInput" placeholder="리드포스쿨,풀리수학,우유,수학익힘책,청소"></textarea><br><br>
+
+      <label for="studentNamesInput">학생 명단 (쉼표 구분)</label><br>
+      <textarea id="studentNamesInput" placeholder="홍길동,김철수,이영희"></textarea><br><br>
+
+      <button id="resetCompletionBtn">초기화</button>
+      <button id="closeBtn">닫기</button>
+    </div>
+  </div>
+
+  <!-- 대시보드 설정 모달 -->
+  <div id="dashSettingsModal" class="modal">
+    <div class="modal-content">
+      <h3>대시보드 설정</h3>
+
+      <label for="dashMainTitleFontSlider">
+        대시보드 제목 크기: <span id="dashMainTitleFontValue">32</span>px
+      </label><br>
+      <input type="range" id="dashMainTitleFontSlider" min="16" max="100" value="32"><br><br>
+
+      <label for="dashTitleFontSlider">
+        할 일 제목 크기: <span id="dashTitleFontValue">24</span>px
+      </label><br>
+      <input type="range" id="dashTitleFontSlider" min="16" max="48" value="24"><br><br>
+
+      <label for="dashTextFontSlider">
+        내용 글씨 크기: <span id="dashTextFontValue">16</span>px
+      </label><br>
+      <input type="range" id="dashTextFontSlider" min="12" max="32" value="16"><br><br>
+
+      <button id="dashSettingsCloseBtn">닫기</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
