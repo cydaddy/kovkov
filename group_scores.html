@@ -348,11 +348,30 @@
                 // card.onclick = () => updateScore(index, 1);
 
                 card.innerHTML = `
-                    <div class="group-name">${groupName}</div>
+                    <div class="group-name" onclick="resetScore(${index})" style="cursor: pointer;">${groupName}</div>
                     <div class="score" id="score-${index}">${score}</div>
                 `;
                 grid.appendChild(card);
             });
+        }
+
+        // Reset score to 0
+        function resetScore(groupIndex) {
+            if (historyIndex < history.length - 1) {
+                history = history.slice(0, historyIndex + 1);
+            }
+
+            const newScores = [...settings.scores];
+            newScores[groupIndex] = 0;
+            settings.scores = newScores;
+
+            saveSettings();
+
+            history.push([...settings.scores]);
+            historyIndex++;
+
+            render();
+            triggerAnimation(groupIndex);
         }
 
         // --- Logic ---
