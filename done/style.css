@@ -310,6 +310,7 @@ body {
   box-shadow: none;
   transform: translate(4px, 4px);
   border-color: var(--black);
+  opacity: 0.4;
 }
 
 .student-cell.absent {
@@ -391,10 +392,11 @@ body {
   bottom: 30px;
   right: 30px;
   width: 70px;
+  width: 70px;
   height: 70px;
   background: transparent;
-  z-index: 900;
-  /* Below FAB when FAB is visible */
+  z-index: 9990;
+  /* Layer 1: Trigger */
   cursor: pointer;
 }
 
@@ -409,7 +411,8 @@ body {
   box-shadow: 5px 5px 0px var(--black);
   border-radius: 50%;
   cursor: pointer;
-  z-index: 1000;
+  z-index: 9995;
+  /* Layer 2: Button (Above Trigger) */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -435,7 +438,11 @@ body {
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  position: fixed;
+  inset: 0;
+  inset: 0;
+  z-index: 10000;
+  /* Layer 3: Modal (Above Everything) */
   justify-content: center;
   align-items: center;
 }
@@ -535,4 +542,25 @@ body {
   .task-title {
     font-size: 1.5rem;
   }
+}
+
+/* ========== Toast Notification ========== */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--black);
+  color: var(--white);
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-weight: 700;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
 }

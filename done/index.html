@@ -8,10 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 
 <body>
+  <div id="toast" class="toast"></div>
   <!-- 입력 화면 -->
   <div id="inputView" class="view active">
     <div class="card input-card">
@@ -50,7 +51,7 @@
   <!-- 대시보드 -->
   <div id="dashboardView" class="view">
     <div class="dashboard-header">
-      <h1 class="dashboard-title">📋 오늘의 요약</h1>
+      <h1 class="dashboard-title">📋 얼른 끝냅시다.</h1>
       <button id="closeDashboardBtn" class="btn btn-ghost">닫기</button>
     </div>
     <div id="dashboardContent" class="dashboard-content"></div>
@@ -81,9 +82,13 @@
       <textarea id="studentNamesInput" placeholder="홍길동, 김철수, 이영희"></textarea>
 
       <label for="fontSizeSlider">
-        글씨 크기: <span id="fontSizeValue">18</span>px
+        글씨 크기: <span id="fontSizeValue">20</span>px
       </label>
-      <input type="range" id="fontSizeSlider" min="14" max="48" value="18">
+      <input type="range" id="fontSizeSlider" min="20" max="70" value="20">
+
+      <button id="showDashboardBtn" class="btn btn-secondary" style="width: 100%; margin-top: 20px;">
+        📋 대시보드 보기
+      </button>
 
       <div class="modal-actions">
         <!-- 전체 초기화 버튼 삭제됨 -->
@@ -92,7 +97,33 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=5" defer></script>
+
+  <!-- 확인 모달 -->
+  <div id="confirmModal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content" style="text-align: center;">
+      <h3>📝 확인</h3>
+      <p style="font-size: 1.3rem; font-weight: 700; margin: 30px 0;">모두 다 했나요?</p>
+      <div class="modal-actions">
+        <button id="confirmNo" class="btn btn-secondary">아니오</button>
+        <button id="confirmYes" class="btn btn-primary">네</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 종료 확인 모달 -->
+  <div id="endConfirmModal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content" style="text-align: center;">
+      <h3>⚠️ 종료 확인</h3>
+      <p style="font-size: 1.3rem; font-weight: 700; margin: 30px 0;">종료하시겠습니까?</p>
+      <div class="modal-actions">
+        <button id="endConfirmNo" class="btn btn-secondary">아니오</button>
+        <button id="endConfirmYes" class="btn btn-primary">네</button>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>

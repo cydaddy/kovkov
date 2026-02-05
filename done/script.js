@@ -2,32 +2,43 @@
 (function () {
   'use strict';
 
+  // --- Global Error Reporting (For Debugging) ---
+  window.onerror = function (msg, url, lineNo, columnNo, error) {
+    const errorMsg = `Error: ${msg}\nLine: ${lineNo}`;
+    console.error(errorMsg);
+    // 화면에 에러 표시
+    const errorBox = document.createElement('div');
+    errorBox.style.position = 'fixed';
+    errorBox.style.top = '0';
+    errorBox.style.left = '0';
+    errorBox.style.width = '100%';
+    errorBox.style.background = 'red';
+    errorBox.style.color = 'white';
+    errorBox.style.padding = '10px';
+    errorBox.style.zIndex = '999999';
+    errorBox.style.fontWeight = 'bold';
+    errorBox.textContent = `🚨 JS 오류 발생: ${msg} (Line ${lineNo})`;
+    document.body.prepend(errorBox);
+    return false;
+  };
+
   // ============================================================
   // ==================== 설정 영역 (여기를 수정하세요) ====================
   // ============================================================
 
   // 특별 관리 학생 (과제 완료 체크 제외 - 대시보드에서 미완료로 표시되지 않음)
-  const SPECIAL_STUDENTS = [
-    // 예: '홍길동', '김철수'
-  ];
+  const SPECIAL_STUDENTS = [];
 
-  // 대시보드 자동 표시 시간 (요일별, 24시간 형식 HH:MM)
-  // 0=일요일, 1=월요일, 2=화요일, 3=수요일, 4=목요일, 5=금요일, 6=토요일
-  const DASHBOARD_SCHEDULE = {
-    1: '15:30', // 월요일
-    2: '15:30', // 화요일
-    3: '14:00', // 수요일 (단축 수업일 경우)
-    4: '15:30', // 목요일
-    5: '14:30', // 금요일
-  };
+  // 대시보드 자동 표시 트리거 과제
+  const DASHBOARD_TRIGGER_TASK = '청소';
 
-  // 기본 학생 명단
+  // 기본 학생 명단 (유명인 가명)
   const DEFAULT_STUDENTS = [
-    '최명조', '김가은', '김라엘', '김지후', '신하은',
-    '양하예', '유하연', '이채빈', '전소율', '전아인',
-    '정예원', '조하빈', '최서연', '한서아', '노윤준',
-    '여민준', '이현서', '정찬희', '지우담', '진재하',
-    '한윤규', '홍아준'
+    '유재석', '박명수', '아이유', '손흥민', '김연아',
+    '차은우', '카리나', '장원영', '페이커', '봉준호',
+    '마동석', '김혜수', '이정재', '송혜교', '강호동',
+    '이효리', '지드래곤', '박보검', '김수현', '전지현',
+    '공유', '현빈'
   ];
 
   // 기본 드롭다운 옵션
@@ -39,67 +50,118 @@
 
   // --- LocalStorage Keys ---
   const KEYS = {
-    STUDENTS: 'students',
+    STUDENTS: 'students_v2', // 명단 변경으로 인한 키 업데이트
     OPTIONS: 'todoOptions',
     FONT_SIZE: 'fontSize',
     LAST_DATE: 'lastDate',
     ABSENT: 'absentStudents',
     DAILY_RECORDS: 'dailyRecords',
-    SETTINGS_VISIBLE: 'settingsVisible' // 설정 버튼 표시 여부 저장
+    SETTINGS_VISIBLE: 'settingsVisible'
   };
 
   // --- State ---
   let students = [];
   let todoOptions = [];
-  let fontSize = 18;
+  let fontSize = 20;
+  let pendingConfirmStudent = null;
   let absentStudents = new Set();
-  let dailyRecords = []; // { task: string, incomplete: string[] }
+  let dailyRecords = [];
   let currentTask = '';
   let currentTaskCompleted = new Set();
   let dashboardShownToday = false;
+  let endBtnClickCount = 0;
+  let endBtnClickTimer = null;
 
-  // --- DOM Elements ---
-  const inputView = document.getElementById('inputView');
-  const taskView = document.getElementById('taskView');
-  const dashboardView = document.getElementById('dashboardView');
-
-  const todoInput = document.getElementById('todoInput');
-  const todoSelect = document.getElementById('todoSelect');
-  const startBtn = document.getElementById('startBtn');
-
-  const currentTaskTitle = document.getElementById('currentTaskTitle');
-  const studentGrid = document.getElementById('studentGrid');
-  const endBtn = document.getElementById('endBtn');
-
-  const dashboardContent = document.getElementById('dashboardContent');
-  const closeDashboardBtn = document.getElementById('closeDashboardBtn');
-
-  const settingsBtn = document.getElementById('settingsBtn');
-  const settingsTrigger = document.getElementById('settingsTrigger');
-  const settingsModal = document.getElementById('settingsModal');
-  const todoOptionsInput = document.getElementById('todoOptionsInput');
-  const studentNamesInput = document.getElementById('studentNamesInput');
-  const fontSizeSlider = document.getElementById('fontSizeSlider');
-  const fontSizeValue = document.getElementById('fontSizeValue');
-  const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+  // --- DOM Elements (Initialized in init) ---
+  let inputView, taskView, dashboardView;
+  let todoInput, todoSelect, startBtn;
+  let currentTaskTitle, studentGrid, endBtn;
+  let dashboardContent, closeDashboardBtn;
+  let settingsBtn, settingsTrigger, settingsModal, todoOptionsInput, studentNamesInput, fontSizeSlider, fontSizeValue, closeSettingsBtn, showDashboardBtn;
+  let confirmModal, confirmYes, confirmNo;
+  let endConfirmModal, endConfirmYes, endConfirmNo;
+  let toast;
+  let toastTimer;
 
   // --- Initialization ---
+  document.addEventListener('DOMContentLoaded', () => {
+    try {
+      initDOM();
+      init();
+    } catch (e) {
+      console.error(e);
+      window.onerror(e.message, 'script.js', 0, 0, e);
+    }
+  });
+
+  function initDOM() {
+    inputView = document.getElementById('inputView');
+    taskView = document.getElementById('taskView');
+    dashboardView = document.getElementById('dashboardView');
+
+    todoInput = document.getElementById('todoInput');
+    todoSelect = document.getElementById('todoSelect');
+    startBtn = document.getElementById('startBtn');
+
+    currentTaskTitle = document.getElementById('currentTaskTitle');
+    studentGrid = document.getElementById('studentGrid');
+    endBtn = document.getElementById('endBtn');
+
+    dashboardContent = document.getElementById('dashboardContent');
+    closeDashboardBtn = document.getElementById('closeDashboardBtn');
+
+    settingsBtn = document.getElementById('settingsBtn');
+    settingsTrigger = document.getElementById('settingsTrigger');
+    settingsModal = document.getElementById('settingsModal');
+    todoOptionsInput = document.getElementById('todoOptionsInput');
+    studentNamesInput = document.getElementById('studentNamesInput');
+    fontSizeSlider = document.getElementById('fontSizeSlider');
+    fontSizeValue = document.getElementById('fontSizeValue');
+    closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    showDashboardBtn = document.getElementById('showDashboardBtn');
+
+    confirmModal = document.getElementById('confirmModal');
+    confirmYes = document.getElementById('confirmYes');
+    confirmNo = document.getElementById('confirmNo');
+
+    endConfirmModal = document.getElementById('endConfirmModal');
+    endConfirmYes = document.getElementById('endConfirmYes');
+    endConfirmNo = document.getElementById('endConfirmNo');
+
+    toast = document.getElementById('toast');
+
+    // 필수 요소 체크
+    if (!endBtn) throw new Error("endBtn element not found!");
+    if (!settingsTrigger) throw new Error("settingsTrigger element not found!");
+  }
+
   function init() {
     checkDateReset();
     loadData();
     populateDropdown();
     bindEvents();
-    startScheduler();
     showView('input');
 
-    // 설정 버튼 표시 상태 복구
     const isVisible = localStorage.getItem(KEYS.SETTINGS_VISIBLE) === 'true';
-    if (isVisible) {
+    if (isVisible && settingsBtn) {
       settingsBtn.classList.remove('hidden');
     }
+
+    console.log('Class Manager Initialized');
+    showToast('프로그램이 시작되었습니다.');
   }
 
-  // --- Date Reset Check ---
+  // --- Helper Functions ---
+  function showToast(message) {
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2000);
+  }
+
   function getTodayString() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -108,9 +170,7 @@
   function checkDateReset() {
     const lastDate = localStorage.getItem(KEYS.LAST_DATE);
     const today = getTodayString();
-
     if (lastDate !== today) {
-      // 새로운 날: 모든 일일 데이터 초기화
       localStorage.removeItem(KEYS.ABSENT);
       localStorage.removeItem(KEYS.DAILY_RECORDS);
       localStorage.setItem(KEYS.LAST_DATE, today);
@@ -118,64 +178,17 @@
     }
   }
 
-  // --- Data Management ---
   function loadData() {
     students = JSON.parse(localStorage.getItem(KEYS.STUDENTS)) || [...DEFAULT_STUDENTS];
     todoOptions = JSON.parse(localStorage.getItem(KEYS.OPTIONS)) || [...DEFAULT_OPTIONS];
-    fontSize = parseInt(localStorage.getItem(KEYS.FONT_SIZE), 10) || 18;
+    fontSize = parseInt(localStorage.getItem(KEYS.FONT_SIZE), 10) || 20;
     absentStudents = new Set(JSON.parse(localStorage.getItem(KEYS.ABSENT)) || []);
     dailyRecords = JSON.parse(localStorage.getItem(KEYS.DAILY_RECORDS)) || [];
-
-    // CSS 변수 초기화
     document.documentElement.style.setProperty('--student-font-size', fontSize + 'px');
   }
 
-  function saveStudents() {
-    localStorage.setItem(KEYS.STUDENTS, JSON.stringify(students));
-  }
-
-  function saveOptions() {
-    localStorage.setItem(KEYS.OPTIONS, JSON.stringify(todoOptions));
-  }
-
-  function saveFontSize() {
-    localStorage.setItem(KEYS.FONT_SIZE, fontSize);
-    document.documentElement.style.setProperty('--student-font-size', fontSize + 'px');
-  }
-
-  function saveAbsent() {
-    localStorage.setItem(KEYS.ABSENT, JSON.stringify([...absentStudents]));
-  }
-
-  function saveDailyRecords() {
-    localStorage.setItem(KEYS.DAILY_RECORDS, JSON.stringify(dailyRecords));
-  }
-
-  // --- View Management ---
-  function showView(view) {
-    inputView.classList.remove('active');
-    taskView.classList.remove('active');
-    dashboardView.classList.remove('active');
-
-    switch (view) {
-      case 'input':
-        inputView.classList.add('active');
-        todoInput.value = '';
-        todoInput.focus();
-        break;
-      case 'task':
-        taskView.classList.add('active');
-        renderGrid();
-        break;
-      case 'dashboard':
-        dashboardView.classList.add('active');
-        renderDashboard();
-        break;
-    }
-  }
-
-  // --- Dropdown ---
   function populateDropdown() {
+    if (!todoSelect) return;
     todoSelect.innerHTML = '<option value="">선택...</option>';
     todoOptions.forEach(opt => {
       const option = document.createElement('option');
@@ -185,8 +198,38 @@
     });
   }
 
-  // --- Grid Rendering ---
+  function showView(view) {
+    if (inputView) inputView.classList.remove('active');
+    if (taskView) taskView.classList.remove('active');
+    if (dashboardView) dashboardView.classList.remove('active');
+
+    switch (view) {
+      case 'input':
+        if (inputView) {
+          inputView.classList.add('active');
+          if (todoInput) {
+            todoInput.value = '';
+            todoInput.focus();
+          }
+        }
+        break;
+      case 'task':
+        if (taskView) {
+          taskView.classList.add('active');
+          renderGrid();
+        }
+        break;
+      case 'dashboard':
+        if (dashboardView) {
+          dashboardView.classList.add('active');
+          renderDashboard();
+        }
+        break;
+    }
+  }
+
   function renderGrid() {
+    if (!studentGrid) return;
     studentGrid.innerHTML = '';
 
     students.forEach(name => {
@@ -194,16 +237,14 @@
       cell.className = 'student-cell';
       cell.textContent = name;
 
-      // 결석 상태 체크
       if (absentStudents.has(name)) {
         cell.classList.add('absent');
       } else if (currentTaskCompleted.has(name)) {
         cell.classList.add('done');
       }
 
-      // 클릭 이벤트 (완료 토글)
       cell.addEventListener('click', (e) => {
-        // 트리플 클릭: 결석 토글
+        // Triple click logic for absent
         if (e.detail === 3) {
           if (absentStudents.has(name)) {
             absentStudents.delete(name);
@@ -211,14 +252,14 @@
             absentStudents.add(name);
             currentTaskCompleted.delete(name);
           }
-          saveAbsent();
+          saveLocalStorage();
           renderGrid();
           return;
         }
 
         if (absentStudents.has(name)) return;
 
-        // 싱글 클릭: 완료 토글
+        // Single click logic for completion
         if (e.detail === 1) {
           if (currentTaskCompleted.has(name)) {
             currentTaskCompleted.delete(name);
@@ -226,10 +267,11 @@
             currentTaskCompleted.add(name);
           }
           renderGrid();
+          checkCleanupComplete();
         }
       });
 
-      // 터치 트리플 탭 지원
+      // Touch handling
       let tapCount = 0;
       let tapTimer;
       cell.addEventListener('touchend', (e) => {
@@ -241,7 +283,7 @@
             absentStudents.add(name);
             currentTaskCompleted.delete(name);
           }
-          saveAbsent();
+          saveLocalStorage();
           renderGrid();
           tapCount = 0;
           clearTimeout(tapTimer);
@@ -256,8 +298,31 @@
     });
   }
 
-  // --- Dashboard Rendering ---
+  function saveLocalStorage() {
+    localStorage.setItem(KEYS.ABSENT, JSON.stringify([...absentStudents]));
+  }
+
+  function checkCleanupComplete() {
+    if (dashboardShownToday) return;
+    if (currentTask !== DASHBOARD_TRIGGER_TASK) return;
+
+    const activeStudents = students.filter(name =>
+      !absentStudents.has(name) && !SPECIAL_STUDENTS.includes(name)
+    );
+    const allCompleted = activeStudents.every(name => currentTaskCompleted.has(name));
+
+    if (allCompleted && activeStudents.length > 0) {
+      dashboardShownToday = true;
+      dailyRecords.push({ task: currentTask, incomplete: [] });
+      localStorage.setItem(KEYS.DAILY_RECORDS, JSON.stringify(dailyRecords));
+      currentTask = '';
+      currentTaskCompleted = new Set();
+      showView('dashboard');
+    }
+  }
+
   function renderDashboard() {
+    if (!dashboardContent) return;
     dashboardContent.innerHTML = '';
 
     const studentTasks = {};
@@ -278,10 +343,6 @@
       .filter(([_, tasks]) => tasks.length > 0)
       .sort((a, b) => b[1].length - a[1].length);
 
-    const allDoneStudents = Object.entries(studentTasks)
-      .filter(([_, tasks]) => tasks.length === 0)
-      .map(([name]) => name);
-
     if (studentsWithTasks.length === 0 && dailyRecords.length > 0) {
       const card = document.createElement('div');
       card.className = 'dashboard-card all-done';
@@ -296,157 +357,239 @@
       studentsWithTasks.forEach(([name, tasks]) => {
         const card = document.createElement('div');
         card.className = 'dashboard-card';
+        card.dataset.studentName = name;
         card.innerHTML = `<h3>👤 ${name}</h3><div class="tasks">${tasks.map(t => `<span class="task-tag">${t}</span>`).join('')}</div>`;
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => {
+          pendingConfirmStudent = name;
+          if (confirmModal) confirmModal.classList.add('active');
+        });
         dashboardContent.appendChild(card);
       });
-      if (allDoneStudents.length > 0) {
-        const card = document.createElement('div');
-        card.className = 'dashboard-card all-done';
-        card.innerHTML = `<h3>✅ 모두 완료 (${allDoneStudents.length}명)</h3><p class="status">${allDoneStudents.join(', ')}</p>`;
-        dashboardContent.appendChild(card);
-      }
     }
   }
 
-  // --- Dashboard Scheduler ---
-  function startScheduler() {
-    setInterval(() => {
-      checkDateReset();
-      checkDashboardSchedule();
-    }, 60000);
-    checkDashboardSchedule();
-  }
-
-  function checkDashboardSchedule() {
-    if (dashboardShownToday) return;
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const scheduledTime = DASHBOARD_SCHEDULE[dayOfWeek];
-    if (!scheduledTime) return;
-    const [hour, minute] = scheduledTime.split(':').map(Number);
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    if (currentHour > hour || (currentHour === hour && currentMinute >= minute)) {
-      dashboardShownToday = true;
-      showView('dashboard');
-    }
-  }
-
-  // --- Event Bindings ---
   function bindEvents() {
-    startBtn.addEventListener('click', () => {
-      const task = todoInput.value.trim() || todoSelect.value;
-      if (!task) {
-        todoInput.focus();
-        todoInput.classList.add('shake');
-        setTimeout(() => todoInput.classList.remove('shake'), 500);
-        return;
+    if (startBtn) {
+      startBtn.addEventListener('click', () => {
+        const task = todoInput.value.trim() || todoSelect.value;
+        if (!task) {
+          todoInput.focus();
+          todoInput.classList.add('shake');
+          setTimeout(() => todoInput.classList.remove('shake'), 500);
+          return;
+        }
+        currentTask = task;
+        currentTaskCompleted = new Set();
+        currentTaskTitle.textContent = task;
+        showView('task');
+      });
+    }
+
+    if (todoInput) {
+      todoInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') startBtn.click();
+      });
+    }
+
+    if (todoSelect) {
+      todoSelect.addEventListener('change', () => {
+        if (todoSelect.value) todoInput.value = '';
+      });
+    }
+
+    // End Button Logic
+    if (endBtn) {
+      endBtn.addEventListener('click', () => {
+        endBtnClickCount++;
+        showToast(`종료하려면 ${3 - endBtnClickCount}번 더 클릭`);
+
+        if (endBtnClickCount >= 3) {
+          if (endConfirmModal) endConfirmModal.classList.add('active');
+          endBtnClickCount = 0;
+          clearTimeout(endBtnClickTimer);
+          return;
+        }
+
+        clearTimeout(endBtnClickTimer);
+        endBtnClickTimer = setTimeout(() => {
+          endBtnClickCount = 0;
+          showToast('');
+        }, 5000);
+      });
+    }
+
+    if (endConfirmNo) {
+      endConfirmNo.addEventListener('click', () => {
+        endConfirmModal.classList.remove('active');
+      });
+    }
+
+    if (endConfirmYes) {
+      endConfirmYes.addEventListener('click', () => {
+        const incomplete = students.filter(name =>
+          !currentTaskCompleted.has(name) &&
+          !absentStudents.has(name) &&
+          !SPECIAL_STUDENTS.includes(name)
+        );
+        if (currentTask) {
+          dailyRecords.push({ task: currentTask, incomplete: incomplete });
+          localStorage.setItem(KEYS.DAILY_RECORDS, JSON.stringify(dailyRecords));
+        }
+        currentTask = '';
+        currentTaskCompleted = new Set();
+        endConfirmModal.classList.remove('active');
+        showView('input');
+      });
+    }
+
+    if (endConfirmModal) {
+      const backdrop = endConfirmModal.querySelector('.modal-backdrop');
+      if (backdrop) {
+        backdrop.addEventListener('click', () => {
+          endConfirmModal.classList.remove('active');
+        });
       }
-      currentTask = task;
-      currentTaskCompleted = new Set();
-      currentTaskTitle.textContent = task;
-      showView('task');
-    });
+    }
 
-    todoInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') startBtn.click();
-    });
+    if (closeDashboardBtn) closeDashboardBtn.addEventListener('click', () => showView('input'));
 
-    todoSelect.addEventListener('change', () => {
-      if (todoSelect.value) todoInput.value = '';
-    });
+    if (showDashboardBtn) {
+      showDashboardBtn.addEventListener('click', () => {
+        if (settingsModal) settingsModal.classList.remove('active');
+        showView('dashboard');
+      });
+    }
 
-    endBtn.addEventListener('click', () => {
-      const incomplete = students.filter(name =>
-        !currentTaskCompleted.has(name) &&
-        !absentStudents.has(name) &&
-        !SPECIAL_STUDENTS.includes(name)
-      );
-      if (currentTask) {
-        dailyRecords.push({ task: currentTask, incomplete: incomplete });
-        saveDailyRecords();
+    if (confirmNo) {
+      confirmNo.addEventListener('click', () => {
+        pendingConfirmStudent = null;
+        confirmModal.classList.remove('active');
+      });
+    }
+
+    if (confirmYes) {
+      confirmYes.addEventListener('click', () => {
+        if (pendingConfirmStudent) {
+          dailyRecords.forEach(record => {
+            const idx = record.incomplete.indexOf(pendingConfirmStudent);
+            if (idx !== -1) {
+              record.incomplete.splice(idx, 1);
+            }
+          });
+          localStorage.setItem(KEYS.DAILY_RECORDS, JSON.stringify(dailyRecords));
+          pendingConfirmStudent = null;
+          confirmModal.classList.remove('active');
+          renderDashboard();
+        }
+      });
+    }
+
+    if (confirmModal) {
+      const backdrop = confirmModal.querySelector('.modal-backdrop');
+      if (backdrop) {
+        backdrop.addEventListener('click', () => {
+          pendingConfirmStudent = null;
+          confirmModal.classList.remove('active');
+        });
       }
-      currentTask = '';
-      currentTaskCompleted = new Set();
-      showView('input');
-    });
+    }
 
-    closeDashboardBtn.addEventListener('click', () => showView('input'));
+    // Settings Trigger Logic (Manual counting)
+    let triggerClickCount = 0;
+    let triggerClickTimer;
 
-    // =======================================================
-    // 설정 버튼 노출/숨김 트리플 클릭 로직
-    // =======================================================
+    if (settingsTrigger) {
+      settingsTrigger.addEventListener('click', (e) => {
+        triggerClickCount++;
+        showToast(`설정: ${triggerClickCount}/3 클릭 확인`);
+        console.log('Settings Trigger Clicked');
 
-    // 1. 트리거 클릭 로직 (숨겨진 상태일 때 동작)
-    settingsTrigger.addEventListener('click', (e) => {
-      if (e.detail === 3) {
-        settingsBtn.classList.remove('hidden');
-        localStorage.setItem(KEYS.SETTINGS_VISIBLE, 'true');
-      }
-    });
+        if (triggerClickCount >= 3) {
+          if (settingsBtn) settingsBtn.classList.remove('hidden');
+          localStorage.setItem(KEYS.SETTINGS_VISIBLE, 'true');
+          triggerClickCount = 0;
+          clearTimeout(triggerClickTimer);
+          showToast('설정 버튼이 활성화되었습니다');
+          return;
+        }
 
-    // 2. 설정 버튼 로직 (보이는 상태)
+        clearTimeout(triggerClickTimer);
+        triggerClickTimer = setTimeout(() => {
+          triggerClickCount = 0;
+          console.log('Settings Trigger Reset');
+        }, 1000);
+      });
+    }
+
+    // Settings Button Logic
     let settingsClickTimer;
     let settingsClickCount = 0;
 
-    settingsBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      settingsClickCount++;
+    if (settingsBtn) {
+      settingsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        settingsClickCount++;
 
-      // 트리플 클릭 감지 (숨기기)
-      if (settingsClickCount === 3) {
-        settingsBtn.classList.add('hidden');
-        localStorage.setItem(KEYS.SETTINGS_VISIBLE, 'false');
-        clearTimeout(settingsClickTimer);
-        settingsClickCount = 0;
-        return;
-      }
-
-      // 싱글 클릭 액션 (모달 열기) - 지연 실행
-      clearTimeout(settingsClickTimer);
-      settingsClickTimer = setTimeout(() => {
-        if (settingsClickCount === 1) {
-          // 모달 오픈 로직
-          todoOptionsInput.value = todoOptions.join(', ');
-          studentNamesInput.value = students.join(', ');
-          fontSizeSlider.value = fontSize;
-          fontSizeValue.textContent = fontSize;
-          settingsModal.classList.add('active');
+        if (settingsClickCount >= 3) {
+          settingsBtn.classList.add('hidden');
+          localStorage.setItem(KEYS.SETTINGS_VISIBLE, 'false');
+          clearTimeout(settingsClickTimer);
+          settingsClickCount = 0;
+          return;
         }
-        settingsClickCount = 0;
-      }, 300); // 0.3초 대기
-    });
 
-    // 설정 모달 배경 클릭
-    settingsModal.querySelector('.modal-backdrop').addEventListener('click', () => {
-      settingsModal.classList.remove('active');
-    });
+        clearTimeout(settingsClickTimer);
+        settingsClickTimer = setTimeout(() => {
+          if (settingsClickCount === 1) {
+            if (todoOptionsInput) todoOptionsInput.value = todoOptions.join(', ');
+            if (studentNamesInput) studentNamesInput.value = students.join(', ');
+            if (fontSizeSlider) fontSizeSlider.value = fontSize;
+            if (fontSizeValue) fontSizeValue.textContent = fontSize;
+            if (settingsModal) settingsModal.classList.add('active');
+          }
+          settingsClickCount = 0;
+        }, 300);
+      });
+    }
 
-    fontSizeSlider.addEventListener('input', () => {
-      fontSize = parseInt(fontSizeSlider.value, 10);
-      fontSizeValue.textContent = fontSize;
-      saveFontSize();
-    });
-
-    closeSettingsBtn.addEventListener('click', () => {
-      const newOptions = todoOptionsInput.value.split(',').map(s => s.trim()).filter(Boolean);
-      if (newOptions.length > 0) {
-        todoOptions = newOptions;
-        saveOptions();
-        populateDropdown();
+    if (settingsModal) {
+      const backdrop = settingsModal.querySelector('.modal-backdrop');
+      if (backdrop) {
+        backdrop.addEventListener('click', () => {
+          settingsModal.classList.remove('active');
+        });
       }
-      const newStudents = studentNamesInput.value.split(',').map(s => s.trim()).filter(Boolean);
-      if (newStudents.length > 0) {
-        students = newStudents;
-        saveStudents();
-        absentStudents = new Set([...absentStudents].filter(n => students.includes(n)));
-        saveAbsent();
-      }
-      if (taskView.classList.contains('active')) renderGrid();
-      settingsModal.classList.remove('active');
-    });
+    }
+
+    if (fontSizeSlider) {
+      fontSizeSlider.addEventListener('input', () => {
+        fontSize = parseInt(fontSizeSlider.value, 10);
+        if (fontSizeValue) fontSizeValue.textContent = fontSize;
+        localStorage.setItem(KEYS.FONT_SIZE, fontSize);
+        document.documentElement.style.setProperty('--student-font-size', fontSize + 'px');
+      });
+    }
+
+    if (closeSettingsBtn) {
+      closeSettingsBtn.addEventListener('click', () => {
+        const newOptions = todoOptionsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+        if (newOptions.length > 0) {
+          todoOptions = newOptions;
+          localStorage.setItem(KEYS.OPTIONS, JSON.stringify(todoOptions));
+          populateDropdown();
+        }
+        const newStudents = studentNamesInput.value.split(',').map(s => s.trim()).filter(Boolean);
+        if (newStudents.length > 0) {
+          students = newStudents;
+          localStorage.setItem(KEYS.STUDENTS, JSON.stringify(students));
+          absentStudents = new Set([...absentStudents].filter(n => students.includes(n)));
+          localStorage.setItem(KEYS.ABSENT, JSON.stringify([...absentStudents]));
+        }
+        if (taskView.classList.contains('active')) renderGrid();
+        settingsModal.classList.remove('active');
+      });
+    }
   }
 
-  // --- Start ---
-  init();
 })();
