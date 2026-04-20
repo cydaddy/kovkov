@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오늘의 운빨 테스트</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #e0e5ec;
+            --light-shadow: #ffffff;
+            --dark-shadow: #a3b1c6;
+            --primary-color: #3498db;
+            --jackpot-color: #e74c3c;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: #555;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        #game-container {
+            background-color: var(--bg-color);
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 10px 10px 20px var(--dark-shadow), -10px -10px 20px var(--light-shadow);
+            width: 90%;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        #reels-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: inset 8px 8px 15px var(--dark-shadow), inset -8px -8px 15px var(--light-shadow);
+        }
+
+        .reel {
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            margin: 0 10px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.5);
+            position: relative;
+        }
+        
+        .reel-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            /* 애니메이션 효과를 JavaScript에서 직접 제어합니다 */
+        }
+
+        .slot-item {
+            width: 100px;
+            height: 100px;
+            font-size: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        #info-display {
+            display: flex;
+            justify-content: space-around;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+        #info-display span {
+            color: var(--primary-color);
+        }
+
+        #spin-button {
+            background-color: var(--bg-color);
+            color: var(--primary-color);
+            border: none;
+            width: 120px;
+            height: 120px;
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'Noto Sans KR', sans-serif;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 8px 8px 15px var(--dark-shadow), -8px -8px 15px var(--light-shadow);
+        }
+
+        #spin-button:active {
+            box-shadow: inset 5px 5px 10px var(--dark-shadow), inset -5px -5px 10px var(--light-shadow);
+            font-size: 26px;
+        }
+
+        #spin-button:disabled {
+            color: #999;
+            cursor: not-allowed;
+            box-shadow: inset 5px 5px 10px var(--dark-shadow), inset -5px -5px 10px var(--light-shadow);
+        }
+        
+        #rules {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #777;
+        }
+
+        #modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        #modal-content {
+            background: var(--bg-color);
+            padding: 40px; border-radius: 20px;
+            box-shadow: 10px 10px 20px rgba(0,0,0,0.2);
+        }
+        #final-score { font-size: 48px; color: var(--jackpot-color); }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>오늘의 운빨 테스트</h1>
+        <div id="reels-container">
+            <div class="reel"><div class="reel-inner" id="reel1"></div></div>
+            <div class="reel"><div class="reel-inner" id="reel2"></div></div>
+            <div class="reel"><div class="reel-inner" id="reel3"></div></div>
+        </div>
+        <div id="info-display">
+            <p>점수: <span id="score">0</span></p>
+            <p>남은 횟수: <span id="spins-left">20</span></p>
+        </div>
+        <button id="spin-button">SPIN</button>
+        <div id="rules">
+            <p>🍫🍫🍫:1000점 | 💎💎💎:500점 | ⭐⭐⭐:300점<br>
+            기타 트리플:100점 | 페어:20점</p>
+        </div>
+    </div>
+
+    <div id="modal"><div id="modal-content">
+        <h2>게임 종료!</h2>
+        <p>최종 점수:</p>
+        <h3 id="final-score">0점</h3>
+        <p>점수를 꼭 확인하세요!</p>
+    </div></div>
+
+    <script>
+        const reels = [
+            document.getElementById('reel1'),
+            document.getElementById('reel2'),
+            document.getElementById('reel3')
+        ];
+        const spinButton = document.getElementById('spin-button');
+        const scoreDisplay = document.getElementById('score');
+        const spinsLeftDisplay = document.getElementById('spins-left');
+        const modal = document.getElementById('modal');
+        const finalScoreDisplay = document.getElementById('final-score');
+
+        const EMOJIS = ['🍫', '💎', '⭐', '🚀', '🍒', '🍋', '🎁'];
+        const REEL_ITEM_COUNT = 30;
+        const SLOT_ITEM_HEIGHT = 100;
+        
+        let score = 0;
+        let spinsLeft = 20;
+        let isSpinning = false;
+        
+        const TRIPLE_CHANCE = 0.08;
+        const PAIR_CHANCE = 0.35;
+
+        function createReelContent(finalEmoji) {
+            const fragment = document.createDocumentFragment();
+            for (let i = 0; i < REEL_ITEM_COUNT; i++) {
+                const item = document.createElement('div');
+                item.className = 'slot-item';
+                // 멈출 위치(위에서 2번째 칸)에 최종 결과를, 나머지는 랜덤으로 채웁니다.
+                item.textContent = (i === 1) ? finalEmoji : EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+                fragment.appendChild(item);
+            }
+            return fragment;
+        }
+
+        // 릴 초기화 (페이지 로드 시 한 번만 실행)
+        function setupReels() {
+            reels.forEach(reel => {
+                const initialContent = createReelContent(EMOJIS[Math.floor(Math.random() * EMOJIS.length)]);
+                reel.appendChild(initialContent);
+            });
+        }
+        
+        async function spin() {
+            if (isSpinning || spinsLeft <= 0) return;
+
+            isSpinning = true;
+            spinButton.disabled = true;
+            spinsLeft--;
+            updateDisplays();
+
+            const finalResults = determineResults();
+            
+            await Promise.all(reels.map((reel, i) => {
+                return spinReel(reel, finalResults[i], 2500 + i * 500);
+            }));
+            
+            calculateScore(finalResults);
+            updateDisplays();
+
+            isSpinning = false;
+            if (spinsLeft > 0) {
+                spinButton.disabled = false;
+            } else {
+                endGame();
+            }
+        }
+
+        function determineResults() {
+            const luck = Math.random();
+            if (luck < TRIPLE_CHANCE) {
+                const winningEmoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+                return [winningEmoji, winningEmoji, winningEmoji];
+            } else if (luck < PAIR_CHANCE) {
+                const pairEmoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+                let otherEmoji;
+                do {
+                    otherEmoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+                } while (pairEmoji === otherEmoji);
+                const result = [pairEmoji, pairEmoji, otherEmoji];
+                return result.sort(() => Math.random() - 0.5);
+            } else {
+                return Array.from({ length: 3 }, () => EMOJIS[Math.floor(Math.random() * EMOJIS.length)]);
+            }
+        }
+
+        function spinReel(reel, finalEmoji, duration) {
+            return new Promise(resolve => {
+                // 1. 스핀 시작 전, 릴 내용물을 새로 구성합니다.
+                reel.innerHTML = '';
+                reel.appendChild(createReelContent(finalEmoji));
+                
+                // 2. 릴을 시작 위치(맨 아래)로 즉시 이동시킵니다.
+                reel.style.transition = 'none';
+                const startPosition = -((REEL_ITEM_COUNT - 1) * SLOT_ITEM_HEIGHT);
+                reel.style.transform = `translateY(${startPosition}px)`;
+
+                // 3. 브라우저가 위 변경사항을 렌더링한 후, 애니메이션을 시작합니다.
+                requestAnimationFrame(() => {
+                    reel.style.transition = `transform ${duration / 1000}s cubic-bezier(0.25, 1, 0.5, 1)`;
+                    // 최종 위치(맨 위에서 두 번째 아이템이 보이도록)로 이동
+                    reel.style.transform = `translateY(-${SLOT_ITEM_HEIGHT}px)`;
+                });
+
+                // 4. 애니메이션이 끝나면 Promise를 resolve합니다.
+                setTimeout(resolve, duration);
+            });
+        }
+        
+        function calculateScore(reels) {
+            let roundScore = 0;
+            const [r1, r2, r3] = reels;
+            if (r1 === r2 && r2 === r3) {
+                switch (r1) {
+                    case '🍫': roundScore = 1000; break;
+                    case '💎': roundScore = 500; break;
+                    case '⭐': roundScore = 300; break;
+                    default: roundScore = 100;
+                }
+            } else if (r1 === r2 || r1 === r3 || r2 === r3) {
+                roundScore = 20;
+            }
+            score += roundScore;
+        }
+
+        function updateDisplays() {
+            scoreDisplay.textContent = score;
+            spinsLeftDisplay.textContent = spinsLeft;
+        }
+
+        function endGame() {
+            finalScoreDisplay.textContent = score + "점";
+            modal.style.display = 'flex';
+            spinButton.disabled = true;
+            spinButton.textContent = "끝!";
+        }
+
+        window.addEventListener('load', setupReels);
+        spinButton.addEventListener('click', spin);
+    </script>
+</body>
+</html>

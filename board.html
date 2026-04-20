@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Text Editor - Shortcut Enhanced</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary-color: #4f46e5;
+      --bg-color: #f3f4f6;
+      --text-color: #1f2937;
+      --border-color: #e5e7eb;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-touch-callout: none; /* iOS 롱프레스 팝업 방지 */
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column-reverse;
+      /* 툴바를 하단으로 보내기 위해 column-reverse 적용 */
+      background-color: var(--bg-color);
+      font-family: 'Noto Sans KR', sans-serif;
+      color: var(--text-color);
+      touch-action: none; /* 멀티터치 OS 제스처 방지 */
+      user-select: none;  /* 롱프레스 텍스트 선택 방지 */
+    }
+
+    #toolbar {
+      flex: 0 0 auto;
+      background-color: #ffffff;
+      background-image:
+        linear-gradient(rgba(79, 70, 229, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79, 70, 229, 0.05) 1px, transparent 1px);
+      background-size: 15px 15px;
+      border-top: 1px solid #d1d5db;
+      /* 하단 배치이므로 테두리를 border-top으로 변경 */
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      box-shadow: var(--shadow);
+      z-index: 100;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-right: 15px;
+      border-right: 1px solid #d1d5db;
+    }
+
+    .control-group:last-child {
+      border-right: none;
+    }
+
+    .control-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #4b5563;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    input[type="range"] {
+      width: 80px;
+      cursor: pointer;
+      accent-color: var(--primary-color);
+    }
+
+    input[type="number"] {
+      width: 45px;
+      padding: 3px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .color-wrapper {
+      position: relative;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--border-color);
+      cursor: pointer;
+    }
+
+    input[type="color"] {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-group {
+      display: flex;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 2px;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      padding: 5px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #6b7280;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+      background: rgba(79, 70, 229, 0.1);
+      color: var(--primary-color);
+    }
+
+    .icon-btn.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    /* 팔레트 색상 버튼 스타일 */
+    .palette-container {
+      display: flex;
+      gap: 6px;
+      margin-left: 10px;
+      margin-right: 5px;
+      align-items: center;
+    }
+
+    .palette-color {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+      transition: transform 0.1s;
+    }
+
+    .palette-color:hover {
+      transform: scale(1.15);
+    }
+
+    .palette-color.active {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+
+    /* 팔레트 모달 스타일 */
+    .palette-modal {
+      display: none;
+      position: absolute;
+      bottom: 45px;
+      left: 0;
+      background: white;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.15);
+      border-radius: 8px;
+      padding: 12px;
+      gap: 8px;
+      z-index: 2000;
+      flex-wrap: wrap;
+      width: 140px;
+    }
+
+    /* 랜덤 버튼 스타일 */
+    .random-btn {
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .random-btn:hover {
+      background: #e5e7eb;
+    }
+
+    #editorContainer {
+      flex: 1 1 auto;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+    }
+
+    #editor {
+      width: 100%;
+      height: 100%;
+      outline: none;
+      border: none;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      overflow: hidden;
+      /* 스크롤바 절대 생성 방지 */
+    }
+
+    #drawCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      /* text 모드일 때는 none */
+      z-index: 10;
+      touch-action: none;
+      /* 터치 시 스크롤 방지 */
+    }
+
+    /* 이미지 레이어 */
+    #imageLayer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    .board-image {
+      position: absolute;
+      cursor: move;
+      user-select: none;
+      box-sizing: border-box;
+      touch-action: none;
+      pointer-events: auto;
+    }
+
+    .board-image.selected {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 1px;
+    }
+
+    .board-image img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+    }
+
+    /* 리사이즈 핸들 */
+    .resize-handle {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: var(--primary-color);
+      border: 2px solid white;
+      border-radius: 50%;
+      z-index: 20;
+      display: none;
+    }
+
+    .resize-handle.tl {
+      top: -6px;
+      left: -6px;
+      cursor: nw-resize;
+    }
+
+    .resize-handle.tr {
+      top: -6px;
+      right: -6px;
+      cursor: ne-resize;
+    }
+
+    .resize-handle.bl {
+      bottom: -6px;
+      left: -6px;
+      cursor: sw-resize;
+    }
+
+    .resize-handle.br {
+      bottom: -6px;
+      right: -6px;
+      cursor: se-resize;
+    }
+
+    /* 이미지 삭제 버튼 */
+    .image-delete-btn {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      width: 22px;
+      height: 22px;
+      background: #ef4444;
+      color: white;
+      border: 2px solid white;
+      border-radius: 50%;
+      font-size: 12px;
+      line-height: 18px;
+      text-align: center;
+      cursor: pointer;
+      z-index: 21;
+      font-weight: bold;
+      display: none;
+    }
+
+    .board-image.selected .resize-handle,
+    .board-image.selected .image-delete-btn {
+      display: block;
+    }
+
+    #toggleToolbarBtn,
+    #toggleToolbarBtnLeft {
+      position: fixed;
+      bottom: 15px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      z-index: 2000;
+      transition: transform 0.2s;
+    }
+
+    #toggleToolbarBtn:hover,
+    #toggleToolbarBtnLeft:hover {
+      transform: scale(1.1);
+    }
+
+    #toggleToolbarBtn {
+      right: 15px;
+    }
+
+    #toggleToolbarBtnLeft {
+      left: 15px;
+    }
+
+    @keyframes popIn {
+      0% {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <button id="toggleToolbarBtnLeft" title="설정 토글 (F2)">
+    <i class="ri-settings-3-fill"></i>
+  </button>
+  <button id="toggleToolbarBtn" title="설정 토글 (F2)">
+    <i class="ri-settings-3-fill"></i>
+  </button>
+
+  <div id="toolbar">
+    <!-- 전체화면 전환 -->
+    <div class="control-group">
+      <button class="icon-btn" id="fullscreenToggleBtn" title="전체화면 전환 (F11)"><i class="ri-fullscreen-line"></i></button>
+    </div>
+
+    <!-- 모드 전환 (항상 왼쪽) -->
+    <div class="control-group">
+      <label style="display: flex; align-items: center; gap: 4px;">
+        모드
+      </label>
+      <div class="btn-group" id="modeGroup">
+        <button class="icon-btn active" data-mode="text" title="텍스트 모드"><i class="ri-text"></i></button>
+        <button class="icon-btn" data-mode="draw" title="그리기 모드"><i class="ri-pencil-fill"></i></button>
+      </div>
+    </div>
+
+    <!-- 페이지 네비게이션 (항상 표시) -->
+    <div class="control-group" id="pageNavGroup">
+      <button class="icon-btn" id="prevPageBtn" title="이전 페이지"><i class="ri-arrow-left-s-line"></i></button>
+      <span id="pageIndicator"
+        style="font-size:0.85rem; font-weight:700; color:#4b5563; white-space:nowrap; min-width:52px; text-align:center;">1
+        / 1</span>
+      <button class="icon-btn" id="nextPageBtn" title="다음 페이지"><i class="ri-arrow-right-s-line"></i></button>
+      <button class="icon-btn" id="addPageBtn" title="새 페이지 추가"><i class="ri-add-line"></i></button>
+      <button class="icon-btn" id="deletePageBtn" title="현재 페이지 삭제" style="color: #ef4444;"><i
+          class="ri-subtract-line"></i></button>
+    </div>
+
+    <!-- 텍스트 모드 전용 컨트롤 -->
+    <div class="control-group" id="textTools_size">
+      <label><i class="ri-font-size"></i> 크기</label>
+      <input type="number" id="fontSizeNumber" value="40" min="10" max="300">
+    </div>
+
+    <div class="control-group" id="textTools_color">
+      <label><i class="ri-palette-line"></i> 색상</label>
+      <div class="color-wrapper" title="배경색">
+        <input type="color" id="bgColorInput" value="#ffffff">
+      </div>
+      <div class="color-wrapper" title="글자색">
+        <input type="color" id="textColorInput" value="#000000">
+      </div>
+      <button class="random-btn" id="randomColorBtn">
+        <i class="ri-magic-line"></i> 랜덤 배색
+      </button>
+    </div>
+
+    <div class="control-group" id="textTools_align">
+      <label>정렬</label>
+      
+      <!-- 가로 정렬 아이콘 드롭다운 -->
+      <div style="position: relative; display: flex; align-items: center;">
+        <button class="icon-btn" id="hAlignTrigger" title="가로 정렬">
+          <i id="hAlignIcon" class="ri-align-center"></i>
+        </button>
+        <div class="palette-modal" id="hAlignModal" style="width: auto; padding: 6px; display: none; bottom: 50px; left: -10px;">
+          <div class="btn-group" id="hAlignGroup">
+            <button class="icon-btn" data-value="left"><i class="ri-align-left"></i></button>
+            <button class="icon-btn" data-value="center"><i class="ri-align-center"></i></button>
+            <button class="icon-btn" data-value="right"><i class="ri-align-right"></i></button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 세로 정렬 아이콘 드롭다운 -->
+      <div style="position: relative; display: flex; align-items: center; margin-left: 5px;">
+        <button class="icon-btn" id="vAlignTrigger" title="세로 정렬">
+          <i id="vAlignIcon" class="ri-align-vertically"></i>
+        </button>
+        <div class="palette-modal" id="vAlignModal" style="width: auto; padding: 6px; display: none; bottom: 50px; left: -10px;">
+          <div class="btn-group" id="vAlignGroup">
+            <button class="icon-btn" data-value="flex-start"><i class="ri-align-top"></i></button>
+            <button class="icon-btn" data-value="center"><i class="ri-align-vertically"></i></button>
+            <button class="icon-btn" data-value="flex-end"><i class="ri-align-bottom"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-group" id="drawTools" style="display: none; border-right: none;">
+      <div style="position: relative; display: flex; align-items: center; margin-right: 10px;">
+        <button id="splitSelectorBtn" style="padding: 4px 10px; border: 1px solid #d1d5db; border-radius: 4px; background: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: inherit; font-size: 0.9rem;">
+          <span id="splitCurrentText">1분할</span>
+          <i class="ri-arrow-down-s-line"></i>
+        </button>
+        <div class="palette-modal" id="splitModal" style="width: 80px; padding: 6px; display: none; bottom: 42px; left: 0; flex-direction: column; gap: 4px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15);">
+          <button class="split-option-btn" data-val="1" style="padding: 8px 0; border: none; background: #e5e7eb; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">1분할</button>
+          <button class="split-option-btn" data-val="2" style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">2분할</button>
+          <button class="split-option-btn" data-val="3" style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">3분할</button>
+          <button class="split-option-btn" data-val="4" style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">4분할</button>
+          <button class="split-option-btn" data-val="5" style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">5분할</button>
+          <button class="split-option-btn" data-val="6" style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">6분할</button>
+        </div>
+      </div>
+      <div class="btn-group" id="penTypeGroup">
+        <button class="icon-btn active" data-type="pen" title="펜"><i class="ri-pencil-line"></i></button>
+        <button class="icon-btn" data-type="highlighter" title="형광펜"><i class="ri-mark-pen-line"></i></button>
+        <button class="icon-btn" data-type="eraser" title="지우개"><i class="ri-eraser-line"></i></button>
+      </div>
+
+      <!-- 팔레트 팝업을 여는 트리거 영역 -->
+      <div style="position: relative; display: flex; align-items: center; margin-left: 5px;">
+        <button class="icon-btn" id="penColorTrigger" title="펜 색상 목록 열기"
+          style="display: flex; align-items: center; gap: 5px; background: #f3f4f6; border: 1px solid #d1d5db;">
+          <i class="ri-palette-line"></i>
+          <div id="penColorIndicator"
+            style="width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.2); background: #ff0000;">
+          </div>
+        </button>
+        <div class="palette-modal" id="penPaletteModal"></div>
+      </div>
+
+      <input type="range" id="penWidthInput" value="5" min="1" max="50" style="width: 60px; margin-left: 5px;"
+        title="펜 굵기">
+      <button class="icon-btn" id="clearCanvasBtn" title="지우기" style="margin-left: 5px;"><i
+          class="ri-delete-bin-line"></i></button>
+      <!-- 이미지 청록 버튼 (drawTools 내) -->
+      <button class="icon-btn" id="insertImageBtn" title="이미지 삽입" style="margin-left: 5px;">
+        <i class="ri-image-add-line"></i>
+      </button>
+      <input type="file" id="imageFileInput" accept="image/*" style="display:none;">
+    </div>
+  </div>
+
+  <!-- 전체 삭제 확인 모달 -->
+  <div id="clearConfirmModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+    <div
+      style="background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); animation: popIn 0.3s ease-out;">
+      <h3 style="font-size: 1.5rem; margin-bottom: 20px; color: #1f2937;">그려진 내용을 모두 지우시겠습니까?</h3>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="confirmClearBtn"
+          style="padding: 10px 20px; font-size: 1rem; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer;">삭제</button>
+        <button id="cancelClearBtn"
+          style="padding: 10px 20px; font-size: 1rem; background: #e5e7eb; color: #374151; border: none; border-radius: 8px; cursor: pointer;">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 페이지 삭제 확인 모달 -->
+  <div id="deleteConfirmModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+    <div
+      style="background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); animation: popIn 0.3s ease-out;">
+      <h3 style="font-size: 1.5rem; margin-bottom: 20px; color: #1f2937;">현재 페이지를 삭제하시겠습니까?</h3>
+      <p style="margin-bottom: 20px; color: #ef4444;">(이 작업은 되돌릴 수 없습니다)</p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="confirmDeletePageBtn"
+          style="padding: 10px 20px; font-size: 1rem; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer;">삭제</button>
+        <button id="cancelDeletePageBtn"
+          style="padding: 10px 20px; font-size: 1rem; background: #e5e7eb; color: #374151; border: none; border-radius: 8px; cursor: pointer;">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="editorContainer">
+    <div id="eraserCursor"
+      style="display: none; position: absolute; border: 2px solid rgba(239, 68, 68, 0.8); background: rgba(239, 68, 68, 0.2); border-radius: 50%; pointer-events: none; z-index: 50; transform: translate(-50%, -50%);">
+    </div>
+    <div id="editor" contenteditable="true" spellcheck="false"></div>
+    <canvas id="drawCanvas"></canvas>
+    <div id="imageLayer"></div>
+    <!-- 화면 분할 UI -->
+    <div id="splitUIContainer" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:40; flex-direction:row;"></div>
+  </div>
+
+  <script>
+    const DB_NAME = 'WhiteboardDB';
+    const DB_VERSION = 4; // 페이지 기능 추가 및 스키마 업데이트
+    let db = null;
+
+    const state = {
+      fontSize: 40,
+      bgColor: "#ffffff",
+      textColor: "#000000",
+      isBold: true,
+      hAlign: "center",
+      vAlign: "center",
+      margin: 40,
+      mode: "text",
+      penType: "pen",
+      penColor: "#ff0000",
+      penWidth: 5,
+      highlighterColor: "#ffff00",
+      highlighterWidth: 15,
+      eraserWidth: 20,
+      currentPage: 1,
+      totalPages: 1,
+      splits: 1,
+      splitStates: Array.from({length: 6}, () => ({ color: '#000000', type: 'pen' }))
+    };
+
+    const els = {
+      editor: document.getElementById('editor'),
+      toolbar: document.getElementById('toolbar'),
+      fontSizeNum: document.getElementById('fontSizeNumber'),
+      bgInput: document.getElementById('bgColorInput'),
+      textInput: document.getElementById('textColorInput'),
+      hAlignTrigger: document.getElementById('hAlignTrigger'),
+      vAlignTrigger: document.getElementById('vAlignTrigger'),
+      hAlignModal: document.getElementById('hAlignModal'),
+      vAlignModal: document.getElementById('vAlignModal'),
+      hAlignBtns: document.querySelectorAll('#hAlignGroup .icon-btn'),
+      vAlignBtns: document.querySelectorAll('#vAlignGroup .icon-btn'),
+      randomBtn: document.getElementById('randomColorBtn'),
+      fullscreenToggleBtn: document.getElementById('fullscreenToggleBtn'),
+      toggleBtn: document.getElementById('toggleToolbarBtn'),
+      toggleBtnLeft: document.getElementById('toggleToolbarBtnLeft'),
+      pageIndicator: document.getElementById('pageIndicator'),
+      prevPageBtn: document.getElementById('prevPageBtn'),
+      nextPageBtn: document.getElementById('nextPageBtn'),
+      addPageBtn: document.getElementById('addPageBtn'),
+      deletePageBtn: document.getElementById('deletePageBtn'),
+
+      // 그리기 도구 요소들
+      editorContainer: document.getElementById('editorContainer'),
+      canvas: document.getElementById('drawCanvas'),
+      ctx: document.getElementById('drawCanvas').getContext('2d'),
+      imageLayer: document.getElementById('imageLayer'),
+      drawTools: document.getElementById('drawTools'),
+      modeBtns: document.querySelectorAll('#modeGroup .icon-btn'),
+      penTypeBtns: document.querySelectorAll('#penTypeGroup .icon-btn'),
+      penColorTrigger: document.getElementById('penColorTrigger'),
+      penColorIndicator: document.getElementById('penColorIndicator'),
+      penPaletteModal: document.getElementById('penPaletteModal'),
+      penWidthInput: document.getElementById('penWidthInput'),
+      clearCanvasBtn: document.getElementById('clearCanvasBtn'),
+      insertImageBtn: document.getElementById('insertImageBtn'),
+      imageFileInput: document.getElementById('imageFileInput'),
+      splitSelectorBtn: document.getElementById('splitSelectorBtn'),
+      splitModal: document.getElementById('splitModal'),
+      splitCurrentText: document.getElementById('splitCurrentText'),
+      splitOptionBtns: document.querySelectorAll('.split-option-btn'),
+      splitUIContainer: document.getElementById('splitUIContainer'),
+      eraserCursor: document.getElementById('eraserCursor'),
+      clearConfirmModal: document.getElementById('clearConfirmModal'),
+      confirmClearBtn: document.getElementById('confirmClearBtn'),
+      cancelClearBtn: document.getElementById('cancelClearBtn'),
+      deleteConfirmModal: document.getElementById('deleteConfirmModal'),
+      confirmDeletePageBtn: document.getElementById('confirmDeletePageBtn'),
+      cancelDeletePageBtn: document.getElementById('cancelDeletePageBtn')
+    };
+
+    const activePointers = new Map();
+    const offscreenCanvas = document.createElement('canvas');
+    const offscreenCtx = offscreenCanvas.getContext('2d');
+    const isolatedCanvas = document.createElement('canvas');
+    const isolatedCtx = isolatedCanvas.getContext('2d');
+
+    function initPalette() {
+      // 칠판에서 많이 쓰이는 가장 선명하고 뚜렷한 12색 원색 구성
+      const PALETTE_COLORS = [
+        '#000000', /* 검정 */ '#808080', /* 회색 */ '#FFFFFF', /* 하양 */
+        '#FF0000', /* 빨강 */ '#FF7F00', /* 주황 */ '#FFFF00', /* 노랑 */
+        '#00FF00', /* 초록 */ '#00FFFF', /* 청록 */ '#0000FF', /* 파랑 */
+        '#000080', /* 남색 */ '#800080', /* 보라 */ '#FF00FF'  /* 분홍 */
+      ];
+
+      if (!els.penPaletteModal) return;
+      els.penPaletteModal.innerHTML = '';
+      PALETTE_COLORS.forEach(color => {
+        const btn = document.createElement('div');
+        btn.className = 'palette-color';
+        btn.style.backgroundColor = color;
+        btn.dataset.color = color;
+
+        btn.addEventListener('click', () => {
+          if (state.penType === 'highlighter') {
+            state.highlighterColor = color;
+          } else {
+            state.penColor = color;
+          }
+          updateModeUI();
+          saveData();
+        });
+
+        els.penPaletteModal.appendChild(btn);
+      });
+
+      // 모달 토글 로직
+      els.penColorTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = els.penPaletteModal.style.display === 'flex';
+        els.penPaletteModal.style.display = isVisible ? 'none' : 'flex';
+      });
+
+      // 모달 외부 클릭 시 닫기
+      document.addEventListener('click', (e) => {
+        if (!els.penColorTrigger.contains(e.target) && !els.penPaletteModal.contains(e.target)) {
+          els.penPaletteModal.style.display = 'none';
+        }
+      });
+    }
+
+    // ───── IndexedDB 헬퍼 함수들 ─────
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          const tx = e.target.transaction;
+          if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings');
+          if (!db.objectStoreNames.contains('content')) db.createObjectStore('content');
+          if (!db.objectStoreNames.contains('canvas')) db.createObjectStore('canvas');
+
+          let imgStore;
+          if (!db.objectStoreNames.contains('images')) {
+            imgStore = db.createObjectStore('images', { keyPath: 'id' });
+          } else {
+            imgStore = tx.objectStore('images');
+          }
+          if (!imgStore.indexNames.contains('byPage')) {
+            imgStore.createIndex('byPage', 'pageId');
+          }
+
+          // 새로 추가된 저장소 (이전에 실패해서 누락됐던 사항 복원)
+          if (!db.objectStoreNames.contains('pages')) db.createObjectStore('pages', { keyPath: 'id' });
+          if (!db.objectStoreNames.contains('appState')) db.createObjectStore('appState');
+        };
+        req.onsuccess = (e) => resolve(e.target.result);
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    function dbPut(storeName, key, value) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readwrite');
+        tx.objectStore(storeName).put(value, key);
+        tx.oncomplete = resolve;
+        tx.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    function dbGet(storeName, key) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readonly');
+        const req = tx.objectStore(storeName).get(key);
+        req.onsuccess = (e) => resolve(e.target.result);
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    function dbDelete(storeName, key) {
+      return new Promise((resolve, reject) => {
+        if (!db) return resolve();
+        const tx = db.transaction(storeName, 'readwrite');
+        const req = tx.objectStore(storeName).delete(key);
+        req.onsuccess = () => resolve();
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    // ───── 저장 함수 ─────
+
+    const PAGE_SETTINGS_KEYS = ['fontSize', 'bgColor', 'textColor', 'isBold', 'hAlign', 'vAlign', 'margin', 'mode', 'penType', 'penColor', 'penWidth', 'highlighterColor', 'highlighterWidth', 'eraserWidth'];
+
+    function saveCurrentPage() {
+      const p = state.currentPage;
+      const settings = {};
+      PAGE_SETTINGS_KEYS.forEach(k => settings[k] = state[k]);
+      dbPut('pages', undefined, { id: p, text: els.editor.innerText, settings });
+    }
+
+    function saveAppState() {
+      dbPut('appState', 'main', { currentPage: state.currentPage, totalPages: state.totalPages });
+    }
+
+    function saveSettings() { saveCurrentPage(); saveAppState(); }
+    function saveContent() { saveCurrentPage(); }
+
+    function saveCanvas() {
+      return new Promise((resolve) => {
+        const canvasKey = 'page_' + state.currentPage;
+        els.canvas.toBlob((blob) => {
+          if (blob) {
+            dbPut('canvas', canvasKey, blob).then(resolve).catch(() => resolve());
+          } else {
+            resolve();
+          }
+        }, 'image/png');
+      });
+    }
+
+    function saveData() { saveCurrentPage(); saveAppState(); }
+
+    function saveImages() {
+      if (!db) return;
+      const pageId = state.currentPage;
+      const items = [...els.imageLayer.querySelectorAll('.board-image')].map(el => ({
+        id: el.dataset.imgId,
+        pageId,
+        x: parseInt(el.style.left),
+        y: parseInt(el.style.top),
+        w: parseInt(el.style.width),
+        h: parseInt(el.style.height),
+        src: el.querySelector('img').src
+      }));
+
+      const tx = db.transaction('images', 'readwrite');
+      const store = tx.objectStore('images');
+      const idx = store.index('byPage');
+      const req = idx.openCursor(IDBKeyRange.only(pageId));
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) { cursor.delete(); cursor.continue(); }
+        else { items.forEach(item => store.put(item)); }
+      };
+    }
+
+    // ───── 이미지 레이어 복원 ─────
+
+    async function loadImages(pageId) {
+      if (!db) return;
+      return new Promise((resolve) => {
+        const tx = db.transaction('images', 'readonly');
+        const idx = tx.objectStore('images').index('byPage');
+        const req = idx.getAll(IDBKeyRange.only(pageId));
+        req.onsuccess = (e) => {
+          e.target.result.forEach(item => {
+            createImageElement(item.src, item.x, item.y, item.w, item.h, item.id);
+          });
+          resolve();
+        };
+      });
+    }
+
+    // ───── 이미지 DOM 요소 생성 ─────
+
+    function createImageElement(src, x, y, w, h, id) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'board-image';
+      wrapper.dataset.imgId = id || ('img_' + Date.now());
+      wrapper.style.left = x + 'px';
+      wrapper.style.top = y + 'px';
+      wrapper.style.width = (w || 300) + 'px';
+      wrapper.style.height = (h || 'auto');
+      if (h) wrapper.style.height = h + 'px';
+
+      const img = document.createElement('img');
+      img.src = src;
+      img.draggable = false;
+      if (!h) {
+        img.onload = () => {
+          // 자연스러운 비율 유지
+          const ratio = img.naturalHeight / img.naturalWidth;
+          wrapper.style.height = Math.round(300 * ratio) + 'px';
+          saveImages();
+        };
+      }
+      wrapper.appendChild(img);
+
+      // 리사이즈 핸들
+      ['tl', 'tr', 'bl', 'br'].forEach(pos => {
+        const handle = document.createElement('div');
+        handle.className = `resize-handle ${pos}`;
+        handle.dataset.pos = pos;
+        wrapper.appendChild(handle);
+        makeResizable(wrapper, handle, pos);
+      });
+
+      // 삭제 버튼
+      const delBtn = document.createElement('div');
+      delBtn.className = 'image-delete-btn';
+      delBtn.textContent = '✕';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        wrapper.remove();
+        saveImages();
+      });
+      wrapper.appendChild(delBtn);
+
+      // 선택 / 선택해제
+      wrapper.addEventListener('pointerdown', (e) => {
+        if (e.target.classList.contains('resize-handle') || e.target.classList.contains('image-delete-btn')) return;
+        selectImage(wrapper);
+      });
+
+      makeDraggable(wrapper);
+      els.imageLayer.appendChild(wrapper);
+      selectImage(wrapper);
+      return wrapper;
+    }
+
+    function selectImage(wrapper) {
+      // 기존 선택 해제
+      els.imageLayer.querySelectorAll('.board-image').forEach(el => el.classList.remove('selected'));
+      wrapper.classList.add('selected');
+    }
+
+    function deselectImages() {
+      els.imageLayer.querySelectorAll('.board-image').forEach(el => el.classList.remove('selected'));
+    }
+
+    // ───── 드래그 ─────
+
+    function makeDraggable(wrapper) {
+      let startX, startY, origLeft, origTop;
+
+      wrapper.addEventListener('pointerdown', (e) => {
+        if (e.target.classList.contains('resize-handle') || e.target.classList.contains('image-delete-btn')) return;
+        e.preventDefault();
+        wrapper.setPointerCapture(e.pointerId);
+        startX = e.clientX;
+        startY = e.clientY;
+        origLeft = parseInt(wrapper.style.left) || 0;
+        origTop = parseInt(wrapper.style.top) || 0;
+
+        function onMove(e) {
+          wrapper.style.left = (origLeft + e.clientX - startX) + 'px';
+          wrapper.style.top = (origTop + e.clientY - startY) + 'px';
+        }
+        function onUp() {
+          wrapper.removeEventListener('pointermove', onMove);
+          wrapper.removeEventListener('pointerup', onUp);
+          saveImages();
+        }
+        wrapper.addEventListener('pointermove', onMove);
+        wrapper.addEventListener('pointerup', onUp);
+      });
+    }
+
+    // ───── 리사이즈 ─────
+
+    function makeResizable(wrapper, handle, pos) {
+      handle.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        handle.setPointerCapture(e.pointerId);
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const origLeft = parseInt(wrapper.style.left) || 0;
+        const origTop = parseInt(wrapper.style.top) || 0;
+        const origW = parseInt(wrapper.style.width) || 300;
+        const origH = parseInt(wrapper.style.height) || 200;
+        const ratio = origH / origW; // 비율 고정
+
+        function onMove(e) {
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+
+          // 가로를 주축으로 삼아 세로는 비율로 자동 계산
+          if (pos === 'br') {
+            const newW = Math.max(50, origW + dx);
+            wrapper.style.width = newW + 'px';
+            wrapper.style.height = Math.round(newW * ratio) + 'px';
+          } else if (pos === 'bl') {
+            const newW = Math.max(50, origW - dx);
+            wrapper.style.width = newW + 'px';
+            wrapper.style.height = Math.round(newW * ratio) + 'px';
+            wrapper.style.left = (origLeft + origW - newW) + 'px';
+          } else if (pos === 'tr') {
+            const newW = Math.max(50, origW + dx);
+            const newH = Math.round(newW * ratio);
+            wrapper.style.width = newW + 'px';
+            wrapper.style.height = newH + 'px';
+            wrapper.style.top = (origTop + origH - newH) + 'px';
+          } else if (pos === 'tl') {
+            const newW = Math.max(50, origW - dx);
+            const newH = Math.round(newW * ratio);
+            wrapper.style.width = newW + 'px';
+            wrapper.style.height = newH + 'px';
+            wrapper.style.left = (origLeft + origW - newW) + 'px';
+            wrapper.style.top = (origTop + origH - newH) + 'px';
+          }
+        }
+        function onUp() {
+          handle.removeEventListener('pointermove', onMove);
+          handle.removeEventListener('pointerup', onUp);
+          saveImages();
+        }
+        handle.addEventListener('pointermove', onMove);
+        handle.addEventListener('pointerup', onUp);
+      });
+    }
+
+    // ───── 이미지 삽입 ─────
+
+    function insertImageFromBlob(blob) {
+      const url = URL.createObjectURL(blob);
+      createImageElement(url, 80, 80, 300, null);
+    }
+
+    function insertImageFromDataURL(dataURL) {
+      createImageElement(dataURL, 80, 80, 300, null);
+    }
+
+    // ───── 페이지 로드 헬퍼 ─────
+
+    async function loadCanvasForPage(pageId) {
+      const blob = await dbGet('canvas', 'page_' + pageId);
+      els.ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        await new Promise(res => {
+          const img = new Image();
+          img.onload = () => { els.ctx.drawImage(img, 0, 0); URL.revokeObjectURL(url); res(); };
+          img.onerror = res;
+          img.src = url;
+        });
+      }
+    }
+
+    async function loadPage(pageId) {
+      // 페이지 데이터 로드
+      const pageData = await dbGet('pages', pageId);
+      if (pageData) {
+        els.editor.innerText = pageData.text || '';
+        if (pageData.settings) Object.assign(state, pageData.settings);
+      } else {
+        // 점 면
+        els.editor.innerText = '';
+      }
+      // 캔버스
+      await loadCanvasForPage(pageId);
+      // 이미지 레이어 초기화 후 로드
+      els.imageLayer.innerHTML = '';
+      await loadImages(pageId);
+    }
+
+    async function loadData() {
+      db = await openDB();
+
+      // 앱 상태 복원 (currentPage, totalPages)
+      const appState = await dbGet('appState', 'main');
+      if (appState) {
+        state.currentPage = appState.currentPage || 1;
+        state.totalPages = appState.totalPages || 1;
+      }
+
+      // 현재 페이지 로드
+      await loadPage(state.currentPage);
+    }
+
+    function init() {
+      resizeCanvas();
+      loadData().then(() => {
+        initPalette();
+        renderUI();
+        applyStyles();
+        setupEventListeners();
+        updateModeUI();
+        updatePageUI();
+        if (state.mode !== 'draw') els.editor.focus();
+      }).catch(err => {
+        console.error('DB 초기화 실패:', err);
+        initPalette();
+        renderUI();
+        applyStyles();
+        setupEventListeners();
+        updateModeUI();
+        updatePageUI();
+        if (state.mode !== 'draw') els.editor.focus();
+      });
+    }
+
+    function updatePageUI() {
+      els.pageIndicator.textContent = `${state.currentPage} / ${state.totalPages}`;
+      els.prevPageBtn.disabled = state.currentPage <= 1;
+      els.nextPageBtn.disabled = state.currentPage >= state.totalPages;
+    }
+
+    async function gotoPage(n) {
+      if (n < 1 || n > state.totalPages) return;
+      // 현재 페이지 저장 (비동기로 안전하게 캔버스 캡처 완료 보장)
+      saveCurrentPage();
+      await saveCanvas();
+      saveImages();
+      saveAppState();
+      // 페이지 전환
+      state.currentPage = n;
+      await loadPage(n);
+      renderUI();
+      applyStyles();
+      updateModeUI();
+      updatePageUI();
+      if (state.mode !== 'draw') els.editor.focus();
+    }
+
+    async function addPage() {
+      // 현재 페이지 저장 (비동기로 안전하게 캔버스 캡처 완료 보장)
+      saveCurrentPage();
+      await saveCanvas();
+      saveImages();
+
+      state.totalPages++;
+      state.currentPage = state.totalPages;
+      saveAppState();
+
+      // 새 페이지: 화면 초기화
+      els.editor.innerText = '';
+      els.ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
+      els.imageLayer.innerHTML = '';
+
+      // 새 페이지는 기본 설정으로 (단, 배경색과 글자색은 이전 페이지 상태 유지)
+      state.hAlign = 'center'; state.vAlign = 'center';
+
+      renderUI();
+      applyStyles();
+      updateModeUI();
+      updatePageUI();
+      if (state.mode !== 'draw') els.editor.focus();
+    }
+
+    function deletePage() {
+      if (state.totalPages <= 1) return;
+      els.deleteConfirmModal.style.display = 'flex';
+    }
+
+    async function executeDeletePage() {
+      els.deleteConfirmModal.style.display = 'none';
+
+      const p = state.currentPage;
+
+      // 삭제 후 뒤의 페이지들을 한 칸씩 앞으로 당김
+      for (let i = p + 1; i <= state.totalPages; i++) {
+        const pData = await dbGet('pages', i);
+        if (pData) {
+          pData.id = i - 1;
+          await dbPut('pages', undefined, pData);
+        } else {
+          await dbDelete('pages', i - 1);
+        }
+
+        const cBlob = await dbGet('canvas', 'page_' + i);
+        if (cBlob) {
+          await dbPut('canvas', 'page_' + (i - 1), cBlob);
+        } else {
+          await dbDelete('canvas', 'page_' + (i - 1));
+        }
+
+        const tx = db.transaction('images', 'readwrite');
+        const imgStore = tx.objectStore('images');
+        const idx = imgStore.index('byPage');
+        const req = idx.getAll(IDBKeyRange.only(i));
+        await new Promise(res => {
+          req.onsuccess = (e) => {
+            const items = e.target.result;
+            const delReq = idx.openCursor(IDBKeyRange.only(i));
+            delReq.onsuccess = (e2) => {
+              const cursor = e2.target.result;
+              if (cursor) { cursor.delete(); cursor.continue(); }
+              else {
+                items.forEach(item => { item.pageId = i - 1; imgStore.put(item); });
+                res();
+              }
+            };
+          };
+        });
+      }
+
+      // 꼬리 흔적 삭제
+      await dbDelete('pages', state.totalPages);
+      await dbDelete('canvas', 'page_' + state.totalPages);
+      const lastTx = db.transaction('images', 'readwrite');
+      const lastReq = lastTx.objectStore('images').index('byPage').openCursor(IDBKeyRange.only(state.totalPages));
+      await new Promise(res => {
+        lastReq.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) { cursor.delete(); cursor.continue(); } else { res(); }
+        };
+      });
+
+      state.totalPages--;
+      if (state.currentPage > state.totalPages) {
+        state.currentPage = state.totalPages;
+      }
+      saveAppState();
+
+      await loadPage(state.currentPage);
+      renderUI();
+      applyStyles();
+      updateModeUI();
+      updatePageUI();
+    }
+
+    function resizeCanvas() {
+      // 캔버스 크기 재설정 시 기존 내용을 임시 보존 후 복원
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = els.canvas.width;
+      tempCanvas.height = els.canvas.height;
+      tempCanvas.getContext('2d').drawImage(els.canvas, 0, 0);
+
+      els.canvas.width = els.editorContainer.clientWidth;
+      els.canvas.height = els.editorContainer.clientHeight;
+      els.ctx.drawImage(tempCanvas, 0, 0);
+    }
+
+    function renderSplitUI() {
+      const container = els.splitUIContainer;
+      if (state.mode !== 'draw' || state.splits <= 1) {
+        container.style.display = 'none';
+        return;
+      }
+      container.style.display = 'flex';
+      container.innerHTML = '';
+      
+      const splitColors = ['#000000', '#ffffff', '#ef4444', '#eab308', '#3b82f6', '#22c55e'];
+
+      for (let i = 0; i < state.splits; i++) {
+        const pane = document.createElement('div');
+        pane.style.flex = 1;
+        pane.style.borderRight = (i < state.splits - 1) ? '2px dashed #9ca3af' : 'none';
+        pane.style.position = 'relative';
+        pane.style.pointerEvents = 'none';
+
+        const toolbar = document.createElement('div');
+        toolbar.style.pointerEvents = 'auto';
+        toolbar.style.position = 'absolute';
+        toolbar.style.bottom = '20px';
+        toolbar.style.left = '50%';
+        toolbar.style.transform = 'translateX(-50%)';
+        toolbar.style.background = 'rgba(255,255,255,0.9)';
+        toolbar.style.padding = '8px 15px';
+        toolbar.style.borderRadius = '30px';
+        toolbar.style.boxShadow = '0 4px 10px rgba(0,0,0,0.3)';
+        toolbar.style.display = 'flex';
+        toolbar.style.gap = '8px';
+        toolbar.style.alignItems = 'center';
+
+        // Colors
+        splitColors.forEach(color => {
+          const btn = document.createElement('div');
+          btn.style.width = '24px';
+          btn.style.height = '24px';
+          btn.style.borderRadius = '50%';
+          btn.style.backgroundColor = color;
+          btn.style.cursor = 'pointer';
+          btn.style.border = (state.splitStates[i].color.toLowerCase() === color.toLowerCase() && state.splitStates[i].type !== 'eraser') ? '3px solid #4f46e5' : '1px solid #ccc';
+          btn.onclick = () => {
+            state.splitStates[i].color = color;
+            state.splitStates[i].type = 'pen';
+            renderSplitUI();
+          };
+          toolbar.appendChild(btn);
+        });
+
+        // Eraser button wrapper
+        const eraserWrapper = document.createElement('div');
+        eraserWrapper.style.position = 'relative';
+        eraserWrapper.style.display = 'flex';
+        eraserWrapper.style.alignItems = 'center';
+        eraserWrapper.style.marginLeft = '5px';
+
+        const sliderContainer = document.createElement('div');
+        sliderContainer.style.display = 'none';
+        sliderContainer.style.position = 'absolute';
+        sliderContainer.style.bottom = '100%';
+        sliderContainer.style.left = '50%';
+        sliderContainer.style.transform = 'translateX(-50%)';
+        sliderContainer.style.background = 'white';
+        sliderContainer.style.padding = '10px';
+        sliderContainer.style.borderRadius = '10px';
+        sliderContainer.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+        sliderContainer.style.marginBottom = '15px';
+
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = '0';
+        slider.max = '100';
+        slider.value = '0';
+        slider.style.width = '120px';
+        
+        // 지우개 바 밀기
+        slider.oninput = (e) => {
+           if (parseInt(e.target.value) >= 95) {
+             const splitW = els.canvas.width / state.splits;
+             offscreenCtx.clearRect(i * splitW, 0, splitW, offscreenCanvas.height);
+             els.ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
+             els.ctx.drawImage(offscreenCanvas, 0, 0);
+             saveCanvas();
+             sliderContainer.style.display = 'none';
+             slider.value = '0';
+           }
+        };
+
+        sliderContainer.appendChild(slider);
+        eraserWrapper.appendChild(sliderContainer);
+
+        const eraserBtn = document.createElement('button');
+        eraserBtn.innerHTML = '<i class="ri-eraser-line"></i>';
+        eraserBtn.style.border = 'none';
+        eraserBtn.style.background = 'transparent';
+        eraserBtn.style.cursor = 'pointer';
+        eraserBtn.style.fontSize = '1.5rem';
+        eraserBtn.style.color = state.splitStates[i].type === 'eraser' ? '#4f46e5' : '#6b7280';
+        
+        // 더블 터치 / 클릭 처리 (스마트보드용)
+        let lastTap = 0;
+        eraserBtn.onclick = (e) => {
+          let currentTime = new Date().getTime();
+          let tapLength = currentTime - lastTap;
+          
+          if (tapLength < 500 && tapLength > 0) {
+            // 더블 클릭/터치 시 
+            sliderContainer.style.display = 'flex';
+            slider.value = '0';
+            e.preventDefault();
+          } else {
+            // 싱글 클릭 시
+            state.splitStates[i].type = 'eraser';
+            // 버튼들 스타일 리렌더링
+            Array.from(toolbar.children).forEach(child => {
+               if(child.style.width === '24px') child.style.border = '1px solid #ccc';
+            });
+            eraserBtn.style.color = '#4f46e5';
+          }
+          lastTap = currentTime;
+        };
+
+        eraserWrapper.appendChild(eraserBtn);
+        toolbar.appendChild(eraserWrapper);
+        pane.appendChild(toolbar);
+        container.appendChild(pane);
+      }
+    }
+
+    function updateModeUI() {
+      const isDrawMode = state.mode === 'draw';
+
+      // 캔버스 / 에디터 상호작용 전환
+      els.canvas.style.pointerEvents = isDrawMode ? 'auto' : 'none';
+      els.editor.style.pointerEvents = isDrawMode ? 'none' : 'auto';
+      if (isDrawMode) els.editor.blur();
+
+      // 텍스트 모드 전용 컬트롤 토글
+      document.getElementById('textTools_size').style.display = isDrawMode ? 'none' : 'flex';
+      document.getElementById('textTools_color').style.display = isDrawMode ? 'none' : 'flex';
+      document.getElementById('textTools_align').style.display = isDrawMode ? 'none' : 'flex';
+      
+      // 그리기 모드 전용 컬트롤 토글
+      els.drawTools.style.display = isDrawMode ? 'flex' : 'none';
+
+      if (typeof renderSplitUI !== 'undefined') renderSplitUI();
+
+      els.modeBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === state.mode));
+      els.penTypeBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.type === state.penType));
+
+      let currentColor = state.penColor;
+      let currentWidth = state.penWidth;
+      if (state.penType === 'highlighter') {
+        currentColor = state.highlighterColor || '#ffff00';
+        currentWidth = state.highlighterWidth || 15;
+      } else if (state.penType === 'eraser') {
+        currentWidth = state.eraserWidth || 20;
+      }
+
+      if (els.penPaletteModal) {
+        const colors = els.penPaletteModal.querySelectorAll('.palette-color');
+        colors.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.color.toLowerCase() === currentColor.toLowerCase());
+        });
+      }
+
+      if (els.penColorIndicator) {
+        els.penColorIndicator.style.backgroundColor = currentColor;
+      }
+
+      els.penWidthInput.value = currentWidth;
+    }
+
+    function getPointerDiameter(e) {
+      if (e.pointerType === 'mouse' || e.pointerType === 'pen') return 0;
+      const w = Math.max(e.width || 0, (e.radiusX || 0) * 2);
+      const h = Math.max(e.height || 0, (e.radiusY || 0) * 2);
+      return Math.sqrt(w * h);
+    }
+
+    function isPalm(e) {
+      if (e.pointerType !== 'touch') return false;
+      const w = Math.max(e.width || 0, (e.radiusX || 0) * 2);
+      const h = Math.max(e.height || 0, (e.radiusY || 0) * 2);
+      const area = w * h;
+
+      // 민감도 조정: 압력(pressure) 기준 삭제, 한쪽 길이가 45px 이상이거나 넓이가 1000px 이상일 때(손바닥 등)만 지우개로 판정
+      return area > 1000 || Math.max(w, h) > 45;
+    }
+
+    function updateEraserCursor(e) {
+      if (state.mode !== 'draw') {
+        els.eraserCursor.style.display = 'none';
+        return;
+      }
+
+      let checkPalm = isPalm(e);
+      let size = 0;
+      let show = false;
+
+      const bounds = els.editorContainer.getBoundingClientRect();
+      
+      let currentPenType = state.penType;
+      if (state.splits > 1) {
+         let sIndex = Math.floor((e.clientX - bounds.left) / (bounds.width / state.splits));
+         if (sIndex < 0) sIndex = 0;
+         if (sIndex >= state.splits) sIndex = state.splits - 1;
+         currentPenType = state.splitStates[sIndex].type;
+      }
+
+      if (currentPenType === 'eraser') {
+        size = state.eraserWidth * 3;
+        show = true;
+      } else if (checkPalm || (activePointers.has(e.pointerId) && activePointers.get(e.pointerId).isPalmErasing)) {
+        if (activePointers.has(e.pointerId)) {
+          size = activePointers.get(e.pointerId).widthSize;
+        } else {
+          size = Math.max(30, getPointerDiameter(e));
+        }
+        show = true;
+      }
+
+      if (show) {
+        els.eraserCursor.style.display = 'block';
+        els.eraserCursor.style.width = size + 'px';
+        els.eraserCursor.style.height = size + 'px';
+        els.eraserCursor.style.left = (e.clientX - bounds.left) + 'px';
+        els.eraserCursor.style.top = (e.clientY - bounds.top) + 'px';
+      } else {
+        els.eraserCursor.style.display = 'none';
+      }
+    }
+
+    function drawPath(ctx, path, isPalmErasing, palmWidth, info) {
+      if (path.length === 0) return;
+      ctx.beginPath();
+      ctx.moveTo(path[0].x, path[0].y);
+      if (path.length === 1) {
+        ctx.lineTo(path[0].x, path[0].y);
+      } else {
+        for (let i = 1; i < path.length; i++) {
+          ctx.lineTo(path[i].x, path[i].y);
+        }
+      }
+
+      const effectiveType = (info && info.penType) ? info.penType : state.penType;
+      const effectiveColor = (info && info.penColor) ? info.penColor : (effectiveType === 'highlighter' ? (state.highlighterColor || '#ffff00') : state.penColor);
+      const isEraserMode = effectiveType === 'eraser' || isPalmErasing;
+
+      if (isEraserMode) {
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.lineWidth = isPalmErasing ? Math.max(30, palmWidth) : (state.eraserWidth || 20) * 3;
+        ctx.globalAlpha = 1.0;
+      } else {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.strokeStyle = effectiveColor;
+        ctx.lineWidth = effectiveType === 'highlighter' ? (state.highlighterWidth || 15) : state.penWidth;
+        ctx.globalAlpha = effectiveType === 'highlighter' ? 0.4 : 1.0;
+      }
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
+
+    function bakePathToOffscreen(info) {
+      isolatedCanvas.width = els.canvas.width;
+      isolatedCanvas.height = els.canvas.height;
+      isolatedCtx.clearRect(0, 0, isolatedCanvas.width, isolatedCanvas.height);
+      isolatedCtx.drawImage(offscreenCanvas, 0, 0);
+      
+      isolatedCtx.save();
+      if (state.splits > 1) {
+        const splitW = els.canvas.width / state.splits;
+        isolatedCtx.beginPath();
+        isolatedCtx.rect(info.splitIndex * splitW, 0, splitW, els.canvas.height);
+        isolatedCtx.clip();
+      }
+      drawPath(isolatedCtx, info.path, info.isPalmErasing, info.widthSize, info);
+      isolatedCtx.restore();
+
+      offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+      offscreenCtx.drawImage(isolatedCanvas, 0, 0);
+    }
+
+    function startDrawing(e) {
+      if (state.mode !== 'draw') return;
+      els.canvas.setPointerCapture(e.pointerId);
+
+      if (activePointers.size === 0) {
+        offscreenCanvas.width = els.canvas.width;
+        offscreenCanvas.height = els.canvas.height;
+        offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+        offscreenCtx.drawImage(els.canvas, 0, 0);
+      }
+
+      let checkPalm = isPalm(e);
+      let pSize = Math.max(30, getPointerDiameter(e));
+
+      let sIndex = 0;
+      let pType = state.penType;
+      let pColor = state.penType === 'highlighter' ? (state.highlighterColor || '#ffff00') : state.penColor;
+
+      if (state.splits > 1) {
+         const bounds = els.canvas.getBoundingClientRect();
+         const splitW = bounds.width / state.splits;
+         sIndex = Math.floor((e.clientX - bounds.left) / splitW);
+         if (sIndex < 0) sIndex = 0;
+         if (sIndex >= state.splits) sIndex = state.splits - 1;
+
+         pType = state.splitStates[sIndex].type;
+         pColor = state.splitStates[sIndex].color;
+      }
+
+      activePointers.set(e.pointerId, {
+        path: [{ x: e.offsetX, y: e.offsetY }],
+        isPalmErasing: checkPalm,
+        widthSize: pSize,
+        splitIndex: sIndex,
+        penType: pType,
+        penColor: pColor
+      });
+
+      updateEraserCursor(e);
+
+      // 톡 터치 시 바로 점이 찍히도록 렌더링
+      els.ctx.save();
+      if (state.splits > 1) {
+        const splitW = els.canvas.width / state.splits;
+        els.ctx.beginPath();
+        els.ctx.rect(sIndex * splitW, 0, splitW, els.canvas.height);
+        els.ctx.clip();
+      }
+      drawPath(els.ctx, activePointers.get(e.pointerId).path, checkPalm, pSize, activePointers.get(e.pointerId));
+      els.ctx.restore();
+    }
+
+    function draw(e) {
+      updateEraserCursor(e);
+      if (!activePointers.has(e.pointerId)) return;
+
+      let pInfo = activePointers.get(e.pointerId);
+
+      // 그리는 도중 지우개로 전환되는 조건
+      if (isPalm(e) && !pInfo.isPalmErasing) {
+        pInfo.isPalmErasing = true;
+      }
+      if (pInfo.isPalmErasing) {
+        let pSize = Math.max(30, getPointerDiameter(e));
+        pInfo.widthSize = Math.max(pInfo.widthSize, pSize);
+      }
+
+      pInfo.path.push({ x: e.offsetX, y: e.offsetY });
+
+      // 전체 활성 포인트 렌더링
+      els.ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
+      els.ctx.globalCompositeOperation = "source-over";
+      els.ctx.globalAlpha = 1.0;
+      els.ctx.drawImage(offscreenCanvas, 0, 0);
+
+      for (let [, info] of activePointers) {
+        els.ctx.save();
+        if (state.splits > 1) {
+          const splitW = els.canvas.width / state.splits;
+          els.ctx.beginPath();
+          els.ctx.rect(info.splitIndex * splitW, 0, splitW, els.canvas.height);
+          els.ctx.clip();
+        }
+        drawPath(els.ctx, info.path, info.isPalmErasing, info.widthSize, info);
+        els.ctx.restore();
+      }
+    }
+
+    function stopDrawing(e) {
+      els.canvas.releasePointerCapture(e.pointerId);
+      if (activePointers.has(e.pointerId)) {
+        const info = activePointers.get(e.pointerId);
+        bakePathToOffscreen(info);
+        activePointers.delete(e.pointerId);
+
+        els.ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
+        els.ctx.globalCompositeOperation = "source-over";
+        els.ctx.globalAlpha = 1.0;
+        els.ctx.drawImage(offscreenCanvas, 0, 0);
+        
+        for (let [, aInfo] of activePointers) {
+          els.ctx.save();
+          if (state.splits > 1) {
+            const splitW = els.canvas.width / state.splits;
+            els.ctx.beginPath();
+            els.ctx.rect(aInfo.splitIndex * splitW, 0, splitW, els.canvas.height);
+            els.ctx.clip();
+          }
+          drawPath(els.ctx, aInfo.path, aInfo.isPalmErasing, aInfo.widthSize, aInfo);
+          els.ctx.restore();
+        }
+
+        if (activePointers.size === 0) {
+          saveCanvas();
+          saveSettings();
+        }
+      }
+      if (e.type === 'pointerout' || e.type === 'pointercancel' || e.type === 'pointerup') {
+        if (!activePointers.has(e.pointerId) && (e.pointerType === 'mouse' || e.pointerType === 'pen')) {
+          els.eraserCursor.style.display = 'none';
+        }
+      }
+    }
+
+    // --- 핵심: 성능 최적화된 스타일 적용 (이진 탐색) ---
+    function applyStyles() {
+      const e = els.editor;
+
+      // 기초 스타일 적용
+      e.style.backgroundColor = state.bgColor;
+      e.style.color = state.textColor;
+      e.style.fontWeight = state.isBold ? '700' : '400';
+      e.style.textAlign = state.hAlign;
+      e.style.justifyContent = state.vAlign;
+      e.style.padding = `${state.margin}px`;
+
+      // 폰트 크기 최적화 찾기 (이진 탐색 알고리즘)
+      let minSize = 1;
+      let maxSize = state.fontSize; // 설정된 최대값부터 시작 (단축키로 늘리면 이 값이 늘어남)
+      let optimalSize = minSize;
+
+      // 브라우저 렌더링을 일시적으로 차단하고 계산
+      e.style.visibility = 'hidden';
+
+      while (minSize <= maxSize) {
+        let mid = Math.floor((minSize + maxSize) / 2);
+        e.style.fontSize = mid + 'px';
+
+        // 내용이 화면보다 크면(스크롤 발생 시), 폰트를 줄여야 함
+        if (e.scrollHeight <= e.clientHeight) {
+          optimalSize = mid;
+          minSize = mid + 1;
+        } else {
+          maxSize = mid - 1;
+        }
+      }
+
+      // 최종 계산된 크기 적용 (스크롤이 안 생기는 최대 크기)
+      e.style.fontSize = optimalSize + 'px';
+      e.style.visibility = 'visible';
+    }
+
+    function setRandomColors() {
+      // 밝은 테마 vs 어두운 테마
+      const isDarkMode = Math.random() > 0.5;
+
+      // 배경색 HSL
+      const bgHue = Math.floor(Math.random() * 360);
+      const bgS = Math.floor(Math.random() * 50) + 10; // 10 ~ 60% 채도
+
+      // 글자색 HSL (톤온톤, 보색, 완전 무작위 혼합)
+      const schemeType = Math.random();
+      let textHue;
+      if (schemeType < 0.33) textHue = bgHue; // 톤온톤(단색)
+      else if (schemeType < 0.66) textHue = (bgHue + 180) % 360; // 보색(대비)
+      else textHue = Math.floor(Math.random() * 360); // 완전 무작위
+
+      const textS = Math.floor(Math.random() * 60) + 40; // 40 ~ 100% 채도
+
+      if (isDarkMode) {
+        // 어두운 배경 + 밝은 글자
+        const bgL = Math.floor(Math.random() * 15) + 5; // 5 ~ 20 밝기
+        state.bgColor = hslToHex(bgHue, bgS, bgL);
+        const textL = Math.floor(Math.random() * 20) + 80; // 80 ~ 100 밝기
+        state.textColor = hslToHex(textHue, textS, textL);
+      } else {
+        // 밝은 배경 + 어두운 글자
+        const bgL = Math.floor(Math.random() * 10) + 90; // 90 ~ 100 밝기
+        state.bgColor = hslToHex(bgHue, bgS, bgL);
+        const textL = Math.floor(Math.random() * 25) + 10; // 10 ~ 35 밝기
+        state.textColor = hslToHex(textHue, textS, textL);
+      }
+
+      renderUI();
+      applyStyles();
+      saveData();
+    }
+
+    function hslToHex(h, s, l) {
+      l /= 100;
+      const a = s * Math.min(l, 1 - l) / 100;
+      const f = n => {
+        const k = (n + h / 30) % 12;
+        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color).toString(16).padStart(2, '0');
+      };
+      return `#${f(0)}${f(8)}${f(4)}`;
+    }
+
+    function setupEventListeners() {
+      // 입력 시 실시간 업데이트
+      els.editor.addEventListener('input', () => {
+        applyStyles();
+        saveContent();
+      });
+
+      // UI 컨트롤 이벤트 연결
+      els.randomBtn.addEventListener('click', setRandomColors);
+
+      if (els.fullscreenToggleBtn) {
+        els.fullscreenToggleBtn.addEventListener('click', () => {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+              console.error(`Error attempting to enable fullscreen: ${err.message}`);
+            });
+          } else {
+            document.exitFullscreen();
+          }
+        });
+
+        document.addEventListener('fullscreenchange', () => {
+          const icon = els.fullscreenToggleBtn.querySelector('i');
+          if (document.fullscreenElement) {
+            icon.className = 'ri-fullscreen-exit-line';
+            els.fullscreenToggleBtn.title = '전체화면 종료 (F11)';
+          } else {
+            icon.className = 'ri-fullscreen-line';
+            els.fullscreenToggleBtn.title = '전체화면 전환 (F11)';
+          }
+        });
+      }
+
+      if (els.splitSelectorBtn) {
+        els.splitSelectorBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          els.splitModal.style.display = els.splitModal.style.display === 'flex' ? 'none' : 'flex';
+          els.hAlignModal.style.display = 'none';
+          els.vAlignModal.style.display = 'none';
+        });
+
+        els.splitOptionBtns.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const val = parseInt(btn.dataset.val);
+            state.splits = val;
+            els.splitCurrentText.textContent = val + '분할';
+            els.splitModal.style.display = 'none';
+            els.splitOptionBtns.forEach(b => b.style.background = b.dataset.val == val ? '#e5e7eb' : 'transparent');
+
+            renderSplitUI();
+            const penControls = document.querySelectorAll('#penTypeGroup, #penColorTrigger, #penWidthInput');
+            penControls.forEach(el => el.style.opacity = state.splits > 1 ? '0.3' : '1');
+            penControls.forEach(el => el.style.pointerEvents = state.splits > 1 ? 'none' : 'auto');
+          });
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!els.splitSelectorBtn.contains(e.target) && !els.splitModal.contains(e.target)) {
+            els.splitModal.style.display = 'none';
+          }
+        });
+      }
+
+      // 그리기 도구 이벤트 연결
+      els.modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.mode = btn.dataset.mode;
+          updateModeUI(); saveData();
+        });
+      });
+
+      els.penTypeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.penType = btn.dataset.type;
+          updateModeUI(); saveData();
+        });
+      });
+
+      els.penWidthInput.addEventListener('input', (e) => {
+        const w = parseInt(e.target.value);
+        if (state.penType === 'highlighter') state.highlighterWidth = w;
+        else if (state.penType === 'eraser') state.eraserWidth = w;
+        else state.penWidth = w;
+        saveData();
+      });
+
+      els.clearCanvasBtn.addEventListener('click', () => {
+        els.clearConfirmModal.style.display = 'flex';
+      });
+
+      els.confirmClearBtn.addEventListener('click', () => {
+        els.ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
+        offscreenCtx.clearRect(0, 0, els.canvas.width, els.canvas.height);
+        // DB에서도 canvas 항목 삭제
+        if (db) {
+          const tx = db.transaction('canvas', 'readwrite');
+          tx.objectStore('canvas').delete('page_' + state.currentPage);
+        }
+        saveSettings();
+        els.clearConfirmModal.style.display = 'none';
+      });
+
+      els.cancelClearBtn.addEventListener('click', () => {
+        els.clearConfirmModal.style.display = 'none';
+      });
+
+      // Hover 커서 대응
+      els.editorContainer.addEventListener('pointermove', (e) => {
+        if (!activePointers.has(e.pointerId)) {
+          updateEraserCursor(e);
+        }
+      });
+      els.editorContainer.addEventListener('pointerout', (e) => {
+        if (!activePointers.has(e.pointerId)) els.eraserCursor.style.display = 'none';
+      });
+
+      // Canvas 그리기 이벤트 (Pointer API 사용하여 터치/마우스 모두 지원)
+      els.canvas.addEventListener('pointerdown', startDrawing);
+      els.canvas.addEventListener('pointermove', draw);
+      els.canvas.addEventListener('pointerup', stopDrawing);
+      els.canvas.addEventListener('pointerout', stopDrawing);
+      els.canvas.addEventListener('pointercancel', stopDrawing);
+
+      // ───── 멀티터치 제스처 및 롱프레스 완전 차단 ─────
+      // 롱프레스 우클릭(컨텍스트 메뉴) 방지
+      document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+      // 두 손가락 이상 터치 시 핀치줌·OS 제스처 방지
+      document.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 1) e.preventDefault();
+      }, { passive: false });
+
+      document.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 1) e.preventDefault();
+      }, { passive: false });
+
+      // Safari/WebKit 제스처 이벤트 차단 (gesturestart/change/end)
+      document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+      document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+      document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
+      // ───── 페이지 네비게이션 이벤트 ─────
+      els.prevPageBtn.addEventListener('click', () => gotoPage(state.currentPage - 1));
+      els.nextPageBtn.addEventListener('click', () => gotoPage(state.currentPage + 1));
+      els.addPageBtn.addEventListener('click', addPage);
+      els.deletePageBtn.addEventListener('click', deletePage);
+
+      els.confirmDeletePageBtn.addEventListener('click', executeDeletePage);
+      els.cancelDeletePageBtn.addEventListener('click', () => {
+        els.deleteConfirmModal.style.display = 'none';
+      });
+
+      // ───── 이미지 삽입 이벤트 ─────
+
+      // 파일 선택으로 이미지 삽입
+      els.insertImageBtn.addEventListener('click', () => {
+        els.imageFileInput.click();
+      });
+
+      els.imageFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file || !file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          createImageElement(ev.target.result, 80, 80, 300, null);
+        };
+        reader.readAsDataURL(file);
+        e.target.value = ''; // 같은 파일 재선택 허용
+      });
+
+      // 클립보드 붙여넣기로 이미지 삽입 (Ctrl+V)
+      document.addEventListener('paste', (e) => {
+        const items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+        for (const item of items) {
+          if (item.type.startsWith('image/')) {
+            e.preventDefault();
+            const blob = item.getAsFile();
+            const url = URL.createObjectURL(blob);
+            createImageElement(url, 80, 80, 300, null);
+            break;
+          }
+        }
+      });
+
+      // 이미지 레이어 외부 클릭 시 선택해제
+      els.editorContainer.addEventListener('pointerdown', (e) => {
+        if (!e.target.closest('.board-image')) {
+          deselectImages();
+        }
+      });
+
+      els.fontSizeNum.addEventListener('input', (e) => {
+        state.fontSize = parseInt(e.target.value);
+        renderUI(); applyStyles(); saveSettings();
+      });
+
+      els.bgInput.addEventListener('input', (e) => {
+        state.bgColor = e.target.value;
+        applyStyles(); saveSettings();
+      });
+
+      els.textInput.addEventListener('input', (e) => {
+        state.textColor = e.target.value;
+        applyStyles(); saveSettings();
+      });
+
+      // 정렬 팝업 모달 토글
+      els.hAlignTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        els.hAlignModal.style.display = els.hAlignModal.style.display === 'flex' ? 'none' : 'flex';
+        els.vAlignModal.style.display = 'none'; // 다른 모달 닫기
+      });
+
+      els.vAlignTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        els.vAlignModal.style.display = els.vAlignModal.style.display === 'flex' ? 'none' : 'flex';
+        els.hAlignModal.style.display = 'none'; // 다른 모달 닫기
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!els.hAlignTrigger.contains(e.target) && !els.hAlignModal.contains(e.target)) {
+          els.hAlignModal.style.display = 'none';
+        }
+        if (!els.vAlignTrigger.contains(e.target) && !els.vAlignModal.contains(e.target)) {
+          els.vAlignModal.style.display = 'none';
+        }
+      });
+
+      els.hAlignBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.hAlign = btn.dataset.value;
+          els.hAlignModal.style.display = 'none';
+          renderUI(); applyStyles(); saveSettings();
+        });
+      });
+
+      els.vAlignBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.vAlign = btn.dataset.value;
+          els.vAlignModal.style.display = 'none';
+          renderUI(); applyStyles(); saveSettings();
+        });
+      });
+
+      els.toggleBtn.addEventListener('click', () => {
+        els.toolbar.style.display = els.toolbar.style.display === 'none' ? 'flex' : 'none';
+      });
+
+      els.toggleBtnLeft.addEventListener('click', () => {
+        els.toolbar.style.display = els.toolbar.style.display === 'none' ? 'flex' : 'none';
+      });
+
+      window.addEventListener('resize', () => {
+        applyStyles();
+        resizeCanvas();
+      });
+
+      // --- 단축키 로직 ---
+      window.addEventListener('keydown', (e) => {
+
+        // 활성화된(선택된) 이미지 삭제 (Delete / Backspace)
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          const selectedImage = els.imageLayer.querySelector('.board-image.selected');
+          if (selectedImage) {
+            e.preventDefault(); // 브라우저 뒤로가기 등 기본 동작 방지
+            selectedImage.remove();
+            saveImages();
+            return;
+          }
+        }
+
+        // F2: 툴바 토글
+        if (e.key === 'F2') {
+          e.preventDefault();
+          els.toolbar.style.display = els.toolbar.style.display === 'none' ? 'flex' : 'none';
+          return;
+        }
+
+        // 상태 일괄 업데이트용 헬퍼
+        const updateState = () => {
+          renderUI();
+          applyStyles();
+          saveData();
+        };
+
+        const isShift = e.shiftKey;
+        const isCtrl = e.ctrlKey || e.metaKey; // Windows Ctrl 또는 Mac Command
+        const isAlt = e.altKey;
+        const key = e.code; // 키보드 위치 기준 코드값 (KeyE, KeyR ...)
+
+        // 1. Shift + Alt + E : 글씨 커지게 (Max 설정 증가)
+        if (isShift && isAlt && key === 'KeyE') {
+          e.preventDefault();
+          state.fontSize = Math.min(state.fontSize + 1, 300);
+          updateState();
+        }
+
+        // 2. Shift + Alt + R : 글씨 작아지게
+        if (isShift && isAlt && key === 'KeyR') {
+          e.preventDefault();
+          state.fontSize = Math.max(state.fontSize - 1, 10);
+          updateState();
+        }
+
+        // 3. Ctrl + B : 글씨 굵게
+        if (isCtrl && !isShift && !isAlt && key === 'KeyB') {
+          e.preventDefault(); // 브라우저 기본 굵게 방지
+          state.isBold = !state.isBold;
+          updateState();
+        }
+
+        // 4. 가로 정렬 그룹
+        // Shift + Ctrl + C : 가로 가운데
+        if (isShift && isCtrl && !isAlt && key === 'KeyC') {
+          e.preventDefault(); // 개발자도구 등 방지
+          state.hAlign = 'center';
+          updateState();
+        }
+        // Shift + Ctrl + L : 왼쪽 정렬
+        if (isShift && isCtrl && !isAlt && key === 'KeyL') {
+          e.preventDefault();
+          state.hAlign = 'left';
+          updateState();
+        }
+        // Shift + Ctrl + R : 오른쪽 정렬
+        if (isShift && isCtrl && !isAlt && key === 'KeyR') {
+          e.preventDefault(); // 강력 새로고침 방지
+          state.hAlign = 'right';
+          updateState();
+        }
+
+        // 5. 세로 정렬 그룹
+        // Shift + Ctrl + Q : 위쪽 정렬
+        if (isShift && isCtrl && !isAlt && key === 'KeyQ') {
+          e.preventDefault();
+          state.vAlign = 'flex-start';
+          updateState();
+        }
+        // Shift + Ctrl + A : 세로 가운데
+        if (isShift && isCtrl && !isAlt && key === 'KeyA') {
+          e.preventDefault();
+          state.vAlign = 'center';
+          updateState();
+        }
+        // Shift + Ctrl + Z : 아래쪽 정렬
+        if (isShift && isCtrl && !isAlt && key === 'KeyZ') {
+          e.preventDefault();
+          state.vAlign = 'flex-end';
+          updateState();
+        }
+      });
+    }
+
+    function renderUI() {
+      els.fontSizeNum.value = state.fontSize;
+      els.bgInput.value = state.bgColor;
+      els.textInput.value = state.textColor;
+      
+      const hIcons = { 'left': 'ri-align-left', 'center': 'ri-align-center', 'right': 'ri-align-right' };
+      const vIcons = { 'flex-start': 'ri-align-top', 'center': 'ri-align-vertically', 'flex-end': 'ri-align-bottom' };
+      
+      document.getElementById('hAlignIcon').className = hIcons[state.hAlign] || 'ri-align-center';
+      document.getElementById('vAlignIcon').className = vIcons[state.vAlign] || 'ri-align-vertically';
+      
+      els.hAlignBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.value === state.hAlign));
+      els.vAlignBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.value === state.vAlign));
+    }
+
+    function saveData() {
+      saveSettings();
+      saveContent();
+    }
+
+    init();
+  </script>
+</body>
+
+</html>
