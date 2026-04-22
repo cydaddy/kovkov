@@ -22,7 +22,8 @@
 
     * {
       box-sizing: border-box;
-      -webkit-touch-callout: none; /* iOS 롱프레스 팝업 방지 */
+      -webkit-touch-callout: none;
+      /* iOS 롱프레스 팝업 방지 */
     }
 
     body {
@@ -36,8 +37,10 @@
       background-color: var(--bg-color);
       font-family: 'Noto Sans KR', sans-serif;
       color: var(--text-color);
-      touch-action: none; /* 멀티터치 OS 제스처 방지 */
-      user-select: none;  /* 롱프레스 텍스트 선택 방지 */
+      touch-action: none;
+      /* 멀티터치 OS 제스처 방지 */
+      user-select: none;
+      /* 롱프레스 텍스트 선택 방지 */
     }
 
     #toolbar {
@@ -392,7 +395,8 @@
   <div id="toolbar">
     <!-- 전체화면 전환 -->
     <div class="control-group">
-      <button class="icon-btn" id="fullscreenToggleBtn" title="전체화면 전환 (F11)"><i class="ri-fullscreen-line"></i></button>
+      <button class="icon-btn" id="fullscreenToggleBtn" title="전체화면 전환 (F11)"><i
+          class="ri-fullscreen-line"></i></button>
     </div>
 
     <!-- 모드 전환 (항상 왼쪽) -->
@@ -439,13 +443,14 @@
 
     <div class="control-group" id="textTools_align">
       <label>정렬</label>
-      
+
       <!-- 가로 정렬 아이콘 드롭다운 -->
       <div style="position: relative; display: flex; align-items: center;">
         <button class="icon-btn" id="hAlignTrigger" title="가로 정렬">
           <i id="hAlignIcon" class="ri-align-center"></i>
         </button>
-        <div class="palette-modal" id="hAlignModal" style="width: auto; padding: 6px; display: none; bottom: 50px; left: -10px;">
+        <div class="palette-modal" id="hAlignModal"
+          style="width: auto; padding: 6px; display: none; bottom: 50px; left: -10px;">
           <div class="btn-group" id="hAlignGroup">
             <button class="icon-btn" data-value="left"><i class="ri-align-left"></i></button>
             <button class="icon-btn" data-value="center"><i class="ri-align-center"></i></button>
@@ -453,13 +458,14 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 세로 정렬 아이콘 드롭다운 -->
       <div style="position: relative; display: flex; align-items: center; margin-left: 5px;">
         <button class="icon-btn" id="vAlignTrigger" title="세로 정렬">
           <i id="vAlignIcon" class="ri-align-vertically"></i>
         </button>
-        <div class="palette-modal" id="vAlignModal" style="width: auto; padding: 6px; display: none; bottom: 50px; left: -10px;">
+        <div class="palette-modal" id="vAlignModal"
+          style="width: auto; padding: 6px; display: none; bottom: 50px; left: -10px;">
           <div class="btn-group" id="vAlignGroup">
             <button class="icon-btn" data-value="flex-start"><i class="ri-align-top"></i></button>
             <button class="icon-btn" data-value="center"><i class="ri-align-vertically"></i></button>
@@ -471,17 +477,25 @@
 
     <div class="control-group" id="drawTools" style="display: none; border-right: none;">
       <div style="position: relative; display: flex; align-items: center; margin-right: 10px;">
-        <button id="splitSelectorBtn" style="padding: 4px 10px; border: 1px solid #d1d5db; border-radius: 4px; background: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: inherit; font-size: 0.9rem;">
+        <button id="splitSelectorBtn"
+          style="padding: 4px 10px; border: 1px solid #d1d5db; border-radius: 4px; background: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: inherit; font-size: 0.9rem;">
           <span id="splitCurrentText">1분할</span>
           <i class="ri-arrow-down-s-line"></i>
         </button>
-        <div class="palette-modal" id="splitModal" style="width: 80px; padding: 6px; display: none; bottom: 42px; left: 0; flex-direction: column; gap: 4px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15);">
-          <button class="split-option-btn" data-val="1" style="padding: 8px 0; border: none; background: #e5e7eb; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">1분할</button>
-          <button class="split-option-btn" data-val="2" style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">2분할</button>
-          <button class="split-option-btn" data-val="3" style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">3분할</button>
-          <button class="split-option-btn" data-val="4" style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">4분할</button>
-          <button class="split-option-btn" data-val="5" style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">5분할</button>
-          <button class="split-option-btn" data-val="6" style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">6분할</button>
+        <div class="palette-modal" id="splitModal"
+          style="width: 80px; padding: 6px; display: none; bottom: 42px; left: 0; flex-direction: column; gap: 4px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15);">
+          <button class="split-option-btn" data-val="1"
+            style="padding: 8px 0; border: none; background: #e5e7eb; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">1분할</button>
+          <button class="split-option-btn" data-val="2"
+            style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">2분할</button>
+          <button class="split-option-btn" data-val="3"
+            style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">3분할</button>
+          <button class="split-option-btn" data-val="4"
+            style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">4분할</button>
+          <button class="split-option-btn" data-val="5"
+            style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">5분할</button>
+          <button class="split-option-btn" data-val="6"
+            style="padding: 8px 0; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">6분할</button>
         </div>
       </div>
       <div class="btn-group" id="penTypeGroup">
@@ -553,7 +567,9 @@
     <canvas id="drawCanvas"></canvas>
     <div id="imageLayer"></div>
     <!-- 화면 분할 UI -->
-    <div id="splitUIContainer" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:40; flex-direction:row;"></div>
+    <div id="splitUIContainer"
+      style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:40; flex-direction:row;">
+    </div>
   </div>
 
   <script>
@@ -579,7 +595,7 @@
       currentPage: 1,
       totalPages: 1,
       splits: 1,
-      splitStates: Array.from({length: 6}, () => ({ color: '#000000', type: 'pen' }))
+      splitStates: Array.from({ length: 6 }, () => ({ color: '#000000', type: 'pen' }))
     };
 
     const els = {
@@ -1187,7 +1203,7 @@
       }
       container.style.display = 'flex';
       container.innerHTML = '';
-      
+
       const splitColors = ['#000000', '#ffffff', '#ef4444', '#eab308', '#3b82f6', '#22c55e'];
 
       for (let i = 0; i < state.splits; i++) {
@@ -1199,6 +1215,7 @@
 
         const toolbar = document.createElement('div');
         toolbar.style.pointerEvents = 'auto';
+        toolbar.style.touchAction = 'manipulation';  // ← 추가
         toolbar.style.position = 'absolute';
         toolbar.style.bottom = '20px';
         toolbar.style.left = '50%';
@@ -1220,11 +1237,15 @@
           btn.style.backgroundColor = color;
           btn.style.cursor = 'pointer';
           btn.style.border = (state.splitStates[i].color.toLowerCase() === color.toLowerCase() && state.splitStates[i].type !== 'eraser') ? '3px solid #4f46e5' : '1px solid #ccc';
-          btn.onclick = () => {
+          btn.style.touchAction = 'manipulation';
+          btn.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
             state.splitStates[i].color = color;
             state.splitStates[i].type = 'pen';
             renderSplitUI();
-          };
+          });
+
           toolbar.appendChild(btn);
         });
 
@@ -1253,20 +1274,21 @@
         slider.max = '100';
         slider.value = '0';
         slider.style.width = '120px';
-        
+
         // 지우개 바 밀기
         slider.oninput = (e) => {
-           if (parseInt(e.target.value) >= 95) {
-             const splitW = els.canvas.width / state.splits;
-             offscreenCtx.clearRect(i * splitW, 0, splitW, offscreenCanvas.height);
-             els.ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
-             els.ctx.drawImage(offscreenCanvas, 0, 0);
-             saveCanvas();
-             sliderContainer.style.display = 'none';
-             slider.value = '0';
-           }
+          if (parseInt(e.target.value) >= 95) {
+            const splitW = els.canvas.width / state.splits;
+            offscreenCtx.clearRect(i * splitW, 0, splitW, offscreenCanvas.height);
+            els.ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
+            els.ctx.drawImage(offscreenCanvas, 0, 0);
+            saveCanvas();
+            sliderContainer.style.display = 'none';
+            slider.value = '0';
+          }
         };
-
+        slider.addEventListener('pointerdown', (e) => e.stopPropagation());
+        slider.style.touchAction = 'manipulation';    // ← 추가 
         sliderContainer.appendChild(slider);
         eraserWrapper.appendChild(sliderContainer);
 
@@ -1277,29 +1299,32 @@
         eraserBtn.style.cursor = 'pointer';
         eraserBtn.style.fontSize = '1.5rem';
         eraserBtn.style.color = state.splitStates[i].type === 'eraser' ? '#4f46e5' : '#6b7280';
-        
+
         // 더블 터치 / 클릭 처리 (스마트보드용)
         let lastTap = 0;
-        eraserBtn.onclick = (e) => {
+        eraserBtn.style.touchAction = 'manipulation';
+        eraserBtn.addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+
           let currentTime = new Date().getTime();
           let tapLength = currentTime - lastTap;
-          
+
           if (tapLength < 500 && tapLength > 0) {
-            // 더블 클릭/터치 시 
+            // 더블 터치 - 슬라이더 표시
             sliderContainer.style.display = 'flex';
             slider.value = '0';
-            e.preventDefault();
           } else {
-            // 싱글 클릭 시
+            // 싱글 터치 - 지우개 모드
             state.splitStates[i].type = 'eraser';
-            // 버튼들 스타일 리렌더링
             Array.from(toolbar.children).forEach(child => {
-               if(child.style.width === '24px') child.style.border = '1px solid #ccc';
+              if (child.style.width === '24px') child.style.border = '1px solid #ccc';
             });
             eraserBtn.style.color = '#4f46e5';
           }
           lastTap = currentTime;
-        };
+        });
+
 
         eraserWrapper.appendChild(eraserBtn);
         toolbar.appendChild(eraserWrapper);
@@ -1320,7 +1345,7 @@
       document.getElementById('textTools_size').style.display = isDrawMode ? 'none' : 'flex';
       document.getElementById('textTools_color').style.display = isDrawMode ? 'none' : 'flex';
       document.getElementById('textTools_align').style.display = isDrawMode ? 'none' : 'flex';
-      
+
       // 그리기 모드 전용 컬트롤 토글
       els.drawTools.style.display = isDrawMode ? 'flex' : 'none';
 
@@ -1380,13 +1405,13 @@
       let show = false;
 
       const bounds = els.editorContainer.getBoundingClientRect();
-      
+
       let currentPenType = state.penType;
       if (state.splits > 1) {
-         let sIndex = Math.floor((e.clientX - bounds.left) / (bounds.width / state.splits));
-         if (sIndex < 0) sIndex = 0;
-         if (sIndex >= state.splits) sIndex = state.splits - 1;
-         currentPenType = state.splitStates[sIndex].type;
+        let sIndex = Math.floor((e.clientX - bounds.left) / (bounds.width / state.splits));
+        if (sIndex < 0) sIndex = 0;
+        if (sIndex >= state.splits) sIndex = state.splits - 1;
+        currentPenType = state.splitStates[sIndex].type;
       }
 
       if (currentPenType === 'eraser') {
@@ -1448,7 +1473,7 @@
       isolatedCanvas.height = els.canvas.height;
       isolatedCtx.clearRect(0, 0, isolatedCanvas.width, isolatedCanvas.height);
       isolatedCtx.drawImage(offscreenCanvas, 0, 0);
-      
+
       isolatedCtx.save();
       if (state.splits > 1) {
         const splitW = els.canvas.width / state.splits;
@@ -1482,14 +1507,14 @@
       let pColor = state.penType === 'highlighter' ? (state.highlighterColor || '#ffff00') : state.penColor;
 
       if (state.splits > 1) {
-         const bounds = els.canvas.getBoundingClientRect();
-         const splitW = bounds.width / state.splits;
-         sIndex = Math.floor((e.clientX - bounds.left) / splitW);
-         if (sIndex < 0) sIndex = 0;
-         if (sIndex >= state.splits) sIndex = state.splits - 1;
+        const bounds = els.canvas.getBoundingClientRect();
+        const splitW = bounds.width / state.splits;
+        sIndex = Math.floor((e.clientX - bounds.left) / splitW);
+        if (sIndex < 0) sIndex = 0;
+        if (sIndex >= state.splits) sIndex = state.splits - 1;
 
-         pType = state.splitStates[sIndex].type;
-         pColor = state.splitStates[sIndex].color;
+        pType = state.splitStates[sIndex].type;
+        pColor = state.splitStates[sIndex].color;
       }
 
       activePointers.set(e.pointerId, {
@@ -1562,7 +1587,7 @@
         els.ctx.globalCompositeOperation = "source-over";
         els.ctx.globalAlpha = 1.0;
         els.ctx.drawImage(offscreenCanvas, 0, 0);
-        
+
         for (let [, aInfo] of activePointers) {
           els.ctx.save();
           if (state.splits > 1) {
@@ -2031,13 +2056,13 @@
       els.fontSizeNum.value = state.fontSize;
       els.bgInput.value = state.bgColor;
       els.textInput.value = state.textColor;
-      
+
       const hIcons = { 'left': 'ri-align-left', 'center': 'ri-align-center', 'right': 'ri-align-right' };
       const vIcons = { 'flex-start': 'ri-align-top', 'center': 'ri-align-vertically', 'flex-end': 'ri-align-bottom' };
-      
+
       document.getElementById('hAlignIcon').className = hIcons[state.hAlign] || 'ri-align-center';
       document.getElementById('vAlignIcon').className = vIcons[state.vAlign] || 'ri-align-vertically';
-      
+
       els.hAlignBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.value === state.hAlign));
       els.vAlignBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.value === state.vAlign));
     }
