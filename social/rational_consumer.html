@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>합리적 소비 챌린지 🛒</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{height:100%;overflow:hidden;font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:linear-gradient(135deg,#ffe9d6 0%,#ffd6e7 50%,#d6e7ff 100%);color:#5a4a3a;touch-action:manipulation}
+#particles{position:fixed;inset:0;pointer-events:none;z-index:9999}
+#app{position:relative;width:100%;height:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px 16px;animation:fadeIn .5s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+@keyframes shine{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes confetti{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+
+/* Claymorphism base */
+.clay{background:linear-gradient(145deg,#fff5e8,#ffe4d0);border-radius:28px;box-shadow:14px 14px 30px rgba(180,140,110,.25),-10px -10px 28px rgba(255,255,255,.9),inset 2px 2px 4px rgba(255,255,255,.7),inset -2px -2px 6px rgba(180,140,110,.12)}
+.clay-pink{background:linear-gradient(145deg,#ffe0ec,#ffc8db);box-shadow:12px 12px 26px rgba(220,140,170,.28),-8px -8px 22px rgba(255,255,255,.85),inset 2px 2px 4px rgba(255,255,255,.6),inset -2px -2px 6px rgba(220,140,170,.15)}
+.clay-blue{background:linear-gradient(145deg,#dceeff,#bcdcff);box-shadow:12px 12px 26px rgba(120,160,210,.3),-8px -8px 22px rgba(255,255,255,.85),inset 2px 2px 4px rgba(255,255,255,.6),inset -2px -2px 6px rgba(120,160,210,.15)}
+.clay-green{background:linear-gradient(145deg,#dff5d8,#b9e8b3);box-shadow:12px 12px 26px rgba(120,180,110,.28),-8px -8px 22px rgba(255,255,255,.85),inset 2px 2px 4px rgba(255,255,255,.6),inset -2px -2px 6px rgba(120,180,110,.15)}
+.clay-yellow{background:linear-gradient(145deg,#fff5c8,#ffe98a);box-shadow:12px 12px 26px rgba(210,180,80,.28),-8px -8px 22px rgba(255,255,255,.85),inset 2px 2px 4px rgba(255,255,255,.7),inset -2px -2px 6px rgba(210,180,80,.15)}
+.clay-purple{background:linear-gradient(145deg,#ece0ff,#d4c0ff);box-shadow:12px 12px 26px rgba(150,120,220,.28),-8px -8px 22px rgba(255,255,255,.85),inset 2px 2px 4px rgba(255,255,255,.6),inset -2px -2px 6px rgba(150,120,220,.15)}
+.btn{cursor:pointer;border:none;font-family:inherit;font-weight:800;transition:all .15s ease;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:translateY(3px) scale(.97);box-shadow:4px 4px 10px rgba(180,140,110,.25),-3px -3px 8px rgba(255,255,255,.8),inset 3px 3px 6px rgba(180,140,110,.15)}
+.btn-press:active{transform:scale(.95)}
+
+/* Title */
+.title-wrap{margin-top:8vh;text-align:center;width:100%;max-width:480px}
+.logo{font-size:64px;animation:float 3s ease-in-out infinite;display:inline-block;filter:drop-shadow(6px 8px 0 rgba(255,180,140,.4))}
+.title{font-size:38px;font-weight:900;color:#ff7a59;text-shadow:3px 4px 0 rgba(255,255,255,.9),5px 6px 0 rgba(255,180,140,.4);margin:10px 0 6px;letter-spacing:-1px}
+.subtitle{font-size:16px;color:#8a6a5a;margin-bottom:30px;font-weight:600}
+.start-btn{padding:22px 50px;font-size:24px;color:#fff;background:linear-gradient(145deg,#ff9a76,#ff6b3d);border-radius:30px;box-shadow:8px 10px 20px rgba(255,107,61,.45),-4px -4px 14px rgba(255,255,255,.7),inset 2px 2px 4px rgba(255,255,255,.4),inset -2px -2px 6px rgba(200,70,30,.3);text-shadow:2px 2px 0 rgba(180,60,30,.4);margin-top:10px;animation:float 2.5s ease-in-out infinite}
+.info-card{margin-top:25px;padding:20px;font-size:14px;color:#7a5a4a;line-height:1.7;text-align:left}
+.info-card b{color:#ff7a59}
+.level-display{margin-top:18px;font-size:14px;color:#8a6a5a;font-weight:700}
+.level-display span{color:#ff7a59;font-weight:900;font-size:18px}
+
+/* Header */
+.header{width:100%;max-width:520px;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;margin-bottom:12px}
+.stage-badge{padding:8px 16px;border-radius:18px;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(145deg,#ffa178,#ff7a4a);box-shadow:4px 4px 10px rgba(255,120,70,.4),inset 1px 1px 2px rgba(255,255,255,.4)}
+.round-info{font-size:14px;font-weight:800;color:#7a5a4a;padding:8px 14px;border-radius:18px;background:rgba(255,255,255,.6);box-shadow:inset 2px 2px 4px rgba(180,140,110,.15)}
+.score-pill{padding:8px 14px;border-radius:18px;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(145deg,#ffd866,#ffb84a);box-shadow:4px 4px 10px rgba(255,180,70,.4),inset 1px 1px 2px rgba(255,255,255,.4)}
+
+/* Scenario */
+.scenario-card{width:100%;max-width:480px;padding:24px;text-align:center;margin-bottom:16px;animation:pop .6s ease}
+.scenario-emoji{font-size:78px;display:block;margin-bottom:8px;animation:wiggle 1.5s ease-in-out infinite}
+.scenario-title{font-size:24px;font-weight:900;color:#d65a3a;margin-bottom:10px}
+.scenario-desc{font-size:15px;color:#7a5a4a;line-height:1.6;font-weight:600}
+
+/* Steps */
+.step-title{width:100%;max-width:520px;font-size:18px;font-weight:900;color:#5a4a3a;margin:12px 6px 8px;display:flex;align-items:center;gap:8px}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:linear-gradient(145deg,#ff9a76,#ff6b3d);color:#fff;font-size:14px;box-shadow:3px 3px 6px rgba(255,107,61,.35),inset 1px 1px 2px rgba(255,255,255,.4)}
+
+.budget-card{width:100%;max-width:480px;padding:18px 22px;display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.wallet-emoji{font-size:42px;animation:wiggle 2s ease-in-out infinite}
+.budget-text{flex:1}
+.budget-label{font-size:13px;color:#8a6a5a;font-weight:700}
+.budget-amount{font-size:26px;font-weight:900;color:#3a8a3a;text-shadow:1px 2px 0 rgba(255,255,255,.7)}
+
+/* Items grid */
+.items-grid{width:100%;max-width:520px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.item-card{padding:14px 8px;text-align:center;cursor:pointer;animation:pop .5s ease backwards;position:relative}
+.item-card:nth-child(1){animation-delay:0s}
+.item-card:nth-child(2){animation-delay:.12s}
+.item-card:nth-child(3){animation-delay:.24s}
+.item-emoji{font-size:46px;display:block;margin-bottom:6px;filter:drop-shadow(3px 4px 0 rgba(180,140,110,.25))}
+.item-name{font-size:13px;font-weight:800;color:#5a4a3a;margin-bottom:6px;min-height:32px;display:flex;align-items:center;justify-content:center;line-height:1.2}
+.item-price{font-size:14px;font-weight:900;color:#d65a3a}
+.item-price.over{color:#aa3030;text-decoration:line-through;opacity:.6}
+.item-feature{font-size:11px;color:#8a6a5a;margin-top:4px;line-height:1.3;font-weight:600;min-height:28px}
+.item-card.selected{transform:translateY(-6px) scale(1.03);outline:4px solid #ff7a59;outline-offset:-2px}
+.item-card.over-budget::after{content:'예산초과';position:absolute;top:8px;right:8px;background:#d63030;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:8px}
+
+/* Criteria selection */
+.criteria-pool{width:100%;max-width:520px;display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.criteria-chip{padding:14px 12px;font-size:13px;font-weight:800;color:#5a4a3a;text-align:center;cursor:pointer;border-radius:18px;transition:all .2s ease}
+.criteria-chip.picked{background:linear-gradient(145deg,#ffd866,#ffb84a)!important;color:#fff;text-shadow:1px 1px 0 rgba(180,100,30,.3);box-shadow:6px 6px 14px rgba(255,180,70,.4),-3px -3px 10px rgba(255,255,255,.7),inset 2px 2px 4px rgba(255,255,255,.4),inset -2px -2px 4px rgba(200,140,30,.3)}
+.criteria-hint{width:100%;max-width:520px;font-size:13px;color:#8a6a5a;text-align:center;margin:4px 0 10px;font-weight:600}
+
+/* Evaluation table */
+.eval-table{width:100%;max-width:520px;padding:14px 10px;margin-bottom:12px}
+.eval-row{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:6px;align-items:center;padding:8px 4px;border-bottom:2px dashed rgba(180,140,110,.2)}
+.eval-row:last-child{border-bottom:none}
+.eval-row.head{font-size:12px;font-weight:900;color:#5a4a3a;border-bottom:3px solid rgba(255,150,90,.4)}
+.eval-row.total{font-weight:900;color:#d65a3a;border-top:3px solid rgba(255,150,90,.4);padding-top:10px;margin-top:4px}
+.eval-label{font-size:12px;font-weight:800;color:#5a4a3a;text-align:left;padding:0 4px}
+.eval-cell{display:flex;justify-content:center;align-items:center}
+.eval-mark{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;cursor:pointer;transition:all .15s ease}
+.eval-mark.O{background:linear-gradient(145deg,#a8e6a3,#7dd57a);color:#2a6a2a;box-shadow:4px 4px 8px rgba(100,180,90,.3),-2px -2px 6px rgba(255,255,255,.7),inset 1px 1px 2px rgba(255,255,255,.4)}
+.eval-mark.T{background:linear-gradient(145deg,#ffe898,#ffd055);color:#8a5a10;box-shadow:4px 4px 8px rgba(220,170,40,.3),-2px -2px 6px rgba(255,255,255,.7),inset 1px 1px 2px rgba(255,255,255,.4)}
+.eval-mark.X{background:linear-gradient(145deg,#ffb0a8,#ff8a7a);color:#8a2a10;box-shadow:4px 4px 8px rgba(220,100,80,.3),-2px -2px 6px rgba(255,255,255,.7),inset 1px 1px 2px rgba(255,255,255,.4)}
+.eval-mark.auto{opacity:.95;pointer-events:none}
+.total-score{font-size:18px;font-weight:900;text-align:center}
+.total-score.best{color:#2a8a2a;text-shadow:1px 2px 0 rgba(255,255,255,.7);animation:wiggle 1s ease-in-out infinite}
+
+/* Action button */
+.action-btn{padding:18px 36px;font-size:18px;color:#fff;background:linear-gradient(145deg,#ff9a76,#ff6b3d);border-radius:24px;box-shadow:6px 8px 16px rgba(255,107,61,.4),-3px -3px 10px rgba(255,255,255,.7),inset 2px 2px 4px rgba(255,255,255,.4),inset -2px -2px 4px rgba(200,70,30,.3);text-shadow:1px 2px 0 rgba(180,60,30,.4);margin:8px 0 24px}
+.action-btn:disabled{background:linear-gradient(145deg,#d0c4b8,#b0a498);box-shadow:4px 4px 10px rgba(150,130,110,.25),inset 1px 1px 2px rgba(255,255,255,.3);cursor:not-allowed;text-shadow:none;color:#fff8}
+.action-btn.green{background:linear-gradient(145deg,#7dd57a,#4cbf4a);box-shadow:6px 8px 16px rgba(80,180,70,.4),-3px -3px 10px rgba(255,255,255,.7),inset 2px 2px 4px rgba(255,255,255,.4),inset -2px -2px 4px rgba(40,120,40,.3);text-shadow:1px 2px 0 rgba(40,100,30,.4)}
+
+/* Result */
+.result-wrap{width:100%;max-width:480px;text-align:center;padding:24px;margin-top:6vh;animation:pop .6s ease}
+.result-emoji{font-size:84px;display:block;animation:wiggle 1.2s ease-in-out infinite;margin-bottom:6px}
+.result-title{font-size:28px;font-weight:900;margin-bottom:8px}
+.result-title.win{color:#2a8a2a;text-shadow:2px 3px 0 rgba(255,255,255,.8)}
+.result-title.ok{color:#d68a2a;text-shadow:2px 3px 0 rgba(255,255,255,.8)}
+.result-title.bad{color:#d63030;text-shadow:2px 3px 0 rgba(255,255,255,.8)}
+.stars{font-size:38px;margin:8px 0;letter-spacing:6px}
+.stars .s{display:inline-block;animation:pop .5s ease backwards}
+.stars .s:nth-child(1){animation-delay:.2s}
+.stars .s:nth-child(2){animation-delay:.45s}
+.stars .s:nth-child(3){animation-delay:.7s}
+.result-msg{font-size:15px;color:#5a4a3a;line-height:1.7;margin:10px 0;font-weight:600;background:rgba(255,255,255,.5);padding:14px;border-radius:18px;box-shadow:inset 2px 2px 4px rgba(180,140,110,.15)}
+.result-msg b{color:#d65a3a}
+.result-actions{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+
+/* Final ranking */
+.final-wrap{width:100%;max-width:480px;text-align:center;padding:28px 20px;margin-top:4vh;animation:pop .8s ease}
+.final-emoji{font-size:90px;display:block;animation:float 2s ease-in-out infinite}
+.final-title{font-size:32px;font-weight:900;color:#ff7a59;margin:6px 0;text-shadow:2px 3px 0 rgba(255,255,255,.8)}
+.final-grade{font-size:48px;font-weight:900;margin:14px 0;padding:14px 24px;display:inline-block;background:linear-gradient(90deg,#ff7a59,#ffb84a,#ff7a59);background-size:200% 100%;animation:shine 2s linear infinite;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none}
+.final-stats{font-size:16px;color:#5a4a3a;line-height:2;margin:10px 0;font-weight:700}
+.final-stats b{color:#d65a3a;font-size:20px}
+
+/* Detail modal */
+.modal{position:fixed;inset:0;background:rgba(80,50,30,.5);display:flex;align-items:center;justify-content:center;z-index:100;animation:fadeIn .3s ease;padding:20px}
+.modal-card{max-width:380px;width:100%;padding:24px;text-align:center}
+.modal-emoji{font-size:72px;display:block;margin-bottom:8px}
+.modal-name{font-size:22px;font-weight:900;color:#d65a3a;margin-bottom:4px}
+.modal-price{font-size:18px;font-weight:900;color:#3a8a3a;margin-bottom:14px}
+.modal-attrs{text-align:left;font-size:14px;color:#5a4a3a;line-height:2;font-weight:700}
+.modal-attrs .star{color:#ffb84a}
+.modal-attrs .star.off{color:#ddd}
+.modal-feat{margin-top:10px;padding:10px;border-radius:14px;background:rgba(255,255,255,.6);font-size:13px;font-weight:600;color:#7a5a4a;line-height:1.5;box-shadow:inset 2px 2px 4px rgba(180,140,110,.12)}
+.modal-close{margin-top:16px;padding:12px 28px;font-size:15px;color:#fff;background:linear-gradient(145deg,#ff9a76,#ff6b3d);border-radius:18px;box-shadow:4px 6px 12px rgba(255,107,61,.4),inset 1px 1px 2px rgba(255,255,255,.4)}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 22px;background:linear-gradient(145deg,#ffd866,#ffb84a);color:#fff;font-weight:800;font-size:14px;border-radius:18px;box-shadow:6px 8px 16px rgba(255,180,70,.4),inset 1px 1px 2px rgba(255,255,255,.4);z-index:1000;animation:pop .4s ease;text-shadow:1px 1px 0 rgba(180,100,30,.3)}
+
+/* Confetti */
+.confetti{position:fixed;top:-30px;width:14px;height:14px;z-index:9998;border-radius:3px;animation:confetti 2.6s linear forwards}
+
+@media(max-width:380px){
+  .title{font-size:30px}
+  .item-emoji{font-size:38px}
+  .item-name{font-size:12px}
+  .eval-mark{width:38px;height:38px;font-size:18px}
+  .criteria-chip{font-size:12px;padding:12px 8px}
+}
+</style>
+</head>
+<body>
+<canvas id="particles"></canvas>
+<div id="app"></div>
+
+<script>
+/* ====== AUDIO ====== */
+let actx=null;
+function ac(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();return actx}
+function beep(freq,dur=.15,type='sine',vol=.18){
+  try{const c=ac();const o=c.createOscillator(),g=c.createGain();
+    o.type=type;o.frequency.setValueAtTime(freq,c.currentTime);
+    g.gain.setValueAtTime(vol,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,c.currentTime+dur);
+    o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function chord(notes,gap=.07,dur=.18,type='triangle'){notes.forEach((n,i)=>setTimeout(()=>beep(n,dur,type),i*gap*1000))}
+const SFX={
+  tap:()=>beep(660,.08,'triangle',.12),
+  pop:()=>{beep(880,.06,'sine',.14);setTimeout(()=>beep(1320,.08,'sine',.1),50)},
+  pick:()=>chord([523,659,784],.05,.12,'triangle'),
+  back:()=>beep(330,.12,'sine',.12),
+  win:()=>chord([523,659,784,1047,1319],.08,.22,'triangle'),
+  ok:()=>chord([523,659,784],.08,.18,'triangle'),
+  bad:()=>chord([330,247],.12,.25,'sawtooth'),
+  star:()=>{beep(1568,.08,'triangle',.14);setTimeout(()=>beep(2093,.1,'triangle',.12),60)},
+  page:()=>{beep(440,.06,'sine',.1);setTimeout(()=>beep(660,.08,'sine',.1),60)},
+  coin:()=>{beep(988,.06,'square',.08);setTimeout(()=>beep(1319,.1,'square',.07),40)}
+};
+
+/* ====== PARTICLES ====== */
+const pcanvas=document.getElementById('particles');
+const pctx=pcanvas.getContext('2d');
+function resizeC(){pcanvas.width=innerWidth;pcanvas.height=innerHeight}
+resizeC();addEventListener('resize',resizeC);
+const parts=[];
+const PCOLORS=['#ff9a76','#ffd866','#7dd57a','#76b8ff','#d4a4ff','#ff8ab8','#fff'];
+function spawnParts(x,y,n=18,colors=PCOLORS){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2,s=Math.random()*5+2;
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2,life:1,size:Math.random()*7+4,color:colors[Math.floor(Math.random()*colors.length)],rot:Math.random()*Math.PI*2,vr:(Math.random()-.5)*.3,shape:Math.random()<.5?'c':'s'})
+  }
+}
+function animP(){
+  pctx.clearRect(0,0,pcanvas.width,pcanvas.height);
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.22;p.vx*=.985;p.life-=.022;p.rot+=p.vr;
+    if(p.life<=0){parts.splice(i,1);continue}
+    pctx.save();pctx.globalAlpha=Math.max(0,p.life);pctx.translate(p.x,p.y);pctx.rotate(p.rot);pctx.fillStyle=p.color;
+    pctx.shadowColor=p.color;pctx.shadowBlur=8;
+    if(p.shape==='c'){pctx.beginPath();pctx.arc(0,0,p.size*p.life,0,Math.PI*2);pctx.fill()}
+    else{pctx.fillRect(-p.size/2*p.life,-p.size/2*p.life,p.size*p.life,p.size*p.life)}
+    pctx.restore();
+  }
+  requestAnimationFrame(animP);
+}
+animP();
+document.addEventListener('pointerdown',e=>{spawnParts(e.clientX,e.clientY,14)},{passive:true});
+
+function confetti(){
+  const colors=['#ff7a59','#ffb84a','#7dd57a','#76b8ff','#d4a4ff','#ff8ab8'];
+  for(let i=0;i<60;i++){
+    const el=document.createElement('div');
+    el.className='confetti';
+    el.style.left=Math.random()*100+'vw';
+    el.style.background=colors[i%colors.length];
+    el.style.animationDelay=Math.random()*.6+'s';
+    el.style.animationDuration=(1.8+Math.random()*1.4)+'s';
+    el.style.transform='rotate('+(Math.random()*360)+'deg)';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),3500);
+  }
+}
+
+/* ====== DATA ====== */
+const SCENARIOS=[
+  {key:'umbrella',emoji:'☔',title:'갑자기 비가 와요!',desc:'학교 가는 길에 비가 쏟아져요.\n튼튼하고 좋은 우산이 필요해요!',need:'우산',
+    items:[
+      {emoji:'☂️',name:'튼튼 장우산',price:9000,quality:5,design:3,durability:5,size:4,feat:'바람에도 안 뒤집혀요'},
+      {emoji:'🌂',name:'예쁜 캐릭터 우산',price:11000,quality:3,design:5,durability:3,size:3,feat:'인기 캐릭터 그림'},
+      {emoji:'☂️',name:'미니 접이식 우산',price:6000,quality:3,design:4,durability:3,size:2,feat:'가방에 쏙 들어가요'},
+      {emoji:'☔',name:'1회용 비닐 우산',price:3000,quality:1,design:1,durability:1,size:3,feat:'곧 망가질 수 있어요'},
+      {emoji:'☂️',name:'야광 안전 우산',price:13000,quality:4,design:4,durability:4,size:4,feat:'어두운 길에서 빛나요'},
+      {emoji:'🌂',name:'투명 돔 우산',price:8000,quality:4,design:4,durability:3,size:3,feat:'앞이 잘 보여요'}
+    ]
+  },
+  {key:'bag',emoji:'🎒',title:'새 학기 가방 사기',desc:'새 학기가 시작돼요!\n매일 메고 다닐 가방이 필요해요.',need:'가방',
+    items:[
+      {emoji:'🎒',name:'튼튼 책가방',price:32000,quality:5,design:3,durability:5,size:5,feat:'5년은 거뜬해요'},
+      {emoji:'🎒',name:'명품 디자인 가방',price:48000,quality:4,design:5,durability:4,size:3,feat:'멋진 디자인'},
+      {emoji:'👜',name:'에코백',price:8000,quality:2,design:3,durability:2,size:3,feat:'가볍지만 쉽게 찢어져요'},
+      {emoji:'🎒',name:'캐릭터 책가방',price:28000,quality:4,design:5,durability:4,size:4,feat:'좋아하는 캐릭터'},
+      {emoji:'🎒',name:'방수 등산 가방',price:35000,quality:5,design:3,durability:5,size:5,feat:'비도 안 새요'},
+      {emoji:'👝',name:'미니 크로스백',price:18000,quality:3,design:5,durability:3,size:1,feat:'책이 안 들어가요'}
+    ]
+  },
+  {key:'gift',emoji:'🎁',title:'친구 생일 선물',desc:'단짝 친구 생일이에요!\n친구가 좋아할 선물을 사야 해요.',need:'선물',
+    items:[
+      {emoji:'🧸',name:'귀여운 곰인형',price:7000,quality:4,design:5,durability:4,size:3,feat:'폭신폭신해요'},
+      {emoji:'📚',name:'베스트셀러 동화책',price:9000,quality:5,design:3,durability:5,size:3,feat:'친구가 좋아하는 작가'},
+      {emoji:'🍫',name:'고급 초콜릿 세트',price:6000,quality:4,design:4,durability:1,size:3,feat:'금방 다 먹어요'},
+      {emoji:'🖍️',name:'48색 색연필',price:10000,quality:5,design:4,durability:5,size:4,feat:'그림 그리기 좋아하는 친구에게'},
+      {emoji:'🎮',name:'미니 보드게임',price:12000,quality:4,design:4,durability:4,size:4,feat:'같이 놀 수 있어요'},
+      {emoji:'🌸',name:'조화 꽃다발',price:4000,quality:2,design:3,durability:3,size:3,feat:'평범한 선물'}
+    ]
+  },
+  {key:'snack',emoji:'🍪',title:'운동 후 간식 사기',desc:'친구들과 신나게 운동했어요!\n맛있고 든든한 간식을 사봐요.',need:'간식',
+    items:[
+      {emoji:'🥪',name:'든든 샌드위치',price:3500,quality:5,design:3,durability:3,size:5,feat:'배가 든든해져요'},
+      {emoji:'🍪',name:'달콤한 쿠키 세트',price:2500,quality:3,design:5,durability:2,size:3,feat:'달지만 금방 배고파져요'},
+      {emoji:'🥤',name:'대용량 탄산음료',price:2000,quality:2,design:3,durability:1,size:5,feat:'설탕이 많아요'},
+      {emoji:'🍎',name:'신선한 과일컵',price:3000,quality:5,design:4,durability:2,size:4,feat:'몸에 좋아요'},
+      {emoji:'🍙',name:'주먹밥 2개',price:3500,quality:5,design:3,durability:3,size:5,feat:'든든해요'},
+      {emoji:'🍟',name:'대형 감자튀김',price:4000,quality:2,design:3,durability:2,size:5,feat:'기름지고 짜요'}
+    ]
+  },
+  {key:'shoes',emoji:'👟',title:'체육 시간 운동화',desc:'체육 시간이 즐거워요!\n잘 뛸 수 있는 운동화가 필요해요.',need:'운동화',
+    items:[
+      {emoji:'👟',name:'전문 운동화',price:42000,quality:5,design:4,durability:5,size:5,feat:'잘 뛰고 안 미끄러져요'},
+      {emoji:'👟',name:'유명 브랜드 신발',price:55000,quality:4,design:5,durability:4,size:4,feat:'멋있는 디자인'},
+      {emoji:'👞',name:'예쁜 구두',price:30000,quality:3,design:5,durability:3,size:2,feat:'운동에 안 맞아요'},
+      {emoji:'👟',name:'가벼운 메쉬 운동화',price:38000,quality:5,design:4,durability:4,size:5,feat:'시원하고 가벼워요'},
+      {emoji:'🥿',name:'슬리퍼',price:8000,quality:1,design:3,durability:1,size:1,feat:'운동에 위험해요'},
+      {emoji:'👟',name:'야광 운동화',price:40000,quality:4,design:5,durability:4,size:4,feat:'밤에 빛나요'}
+    ]
+  },
+  {key:'stationery',emoji:'✏️',title:'학용품 사기',desc:'새 학기 학용품이 필요해요!\n공부할 때 쓸 좋은 학용품을 골라봐요.',need:'학용품',
+    items:[
+      {emoji:'✏️',name:'고급 연필 세트',price:5000,quality:5,design:4,durability:5,size:4,feat:'잘 써지고 안 부러져요'},
+      {emoji:'🖊️',name:'예쁜 캐릭터 펜',price:3500,quality:3,design:5,durability:3,size:3,feat:'예쁘지만 잉크 빨리 떨어져요'},
+      {emoji:'📓',name:'두꺼운 공책 3권',price:6000,quality:4,design:3,durability:4,size:5,feat:'오래 써요'},
+      {emoji:'🖍️',name:'24색 사인펜',price:7000,quality:4,design:5,durability:4,size:4,feat:'다양한 색깔'},
+      {emoji:'📐',name:'필수 학용품 세트',price:8000,quality:5,design:3,durability:5,size:5,feat:'자, 지우개, 연필 모두'},
+      {emoji:'✏️',name:'1회용 연필 10자루',price:2000,quality:2,design:2,durability:2,size:3,feat:'금방 다 써요'}
+    ]
+  }
+];
+
+const CRITERIA=[
+  {key:'price',label:'💰 가격이 알맞은가?'},
+  {key:'quality',label:'⭐ 품질이 좋은가?'},
+  {key:'durability',label:'💪 오래 쓸 수 있는가?'},
+  {key:'design',label:'🎨 디자인이 마음에 드는가?'},
+  {key:'size',label:'📏 크기/양이 적당한가?'},
+  {key:'need',label:'🎯 정말 필요한가?'}
+];
+
+const GRADES=[
+  {min:0,name:'소비 초보',emoji:'🌱'},
+  {min:5,name:'소비 견습생',emoji:'🌿'},
+  {min:10,name:'똑똑한 소비자',emoji:'🌟'},
+  {min:18,name:'합리적 소비자',emoji:'💎'},
+  {min:28,name:'소비 마스터',emoji:'👑'},
+  {min:40,name:'전설의 소비자',emoji:'🏆'}
+];
+
+/* ====== STATE ====== */
+const TOTAL_ROUNDS=5;
+let state={
+  totalScore:parseInt(localStorage.getItem('rc_total')||'0'),
+  totalStars:parseInt(localStorage.getItem('rc_stars')||'0'),
+  played:parseInt(localStorage.getItem('rc_played')||'0'),
+  round:0,
+  roundScore:0,
+  roundStars:0,
+  scenario:null,
+  budget:0,
+  items:[],
+  picked:[],
+  ratings:{},
+  selectedItemIdx:-1,
+  step:0,
+  usedScenarios:[]
+};
+
+function saveStats(){
+  localStorage.setItem('rc_total',state.totalScore);
+  localStorage.setItem('rc_stars',state.totalStars);
+  localStorage.setItem('rc_played',state.played);
+}
+function gradeOf(s){let g=GRADES[0];for(const x of GRADES)if(s>=x.min)g=x;return g}
+
+/* ====== GAME LOGIC ====== */
+function rand(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function startRound(){
+  const avail=SCENARIOS.filter(s=>!state.usedScenarios.includes(s.key));
+  const pool=avail.length?avail:SCENARIOS;
+  state.scenario=pool[Math.floor(Math.random()*pool.length)];
+  state.usedScenarios.push(state.scenario.key);
+  // pick 3 random items
+  state.items=shuffle(state.scenario.items).slice(0,3);
+  // budget: between cheapest and 2nd most expensive
+  const prices=state.items.map(i=>i.price).sort((a,b)=>a-b);
+  const minP=prices[0],maxP=prices[2];
+  // budget around median, slightly randomized
+  const mid=(prices[1]+prices[0])/2;
+  state.budget=Math.round((mid+rand(-prices[0]*.1,prices[0]*.2))/500)*500;
+  if(state.budget<prices[0])state.budget=prices[0]+rand(500,2000);
+  state.picked=[];
+  state.ratings={};
+  state.selectedItemIdx=-1;
+  state.step=0;
+  state.roundScore=0;
+  state.roundStars=0;
+  render();
+}
+
+/* score = O:3, T(△):2, X:1 */
+function ratingFor(item,critKey){
+  const v=item[critKey==='need'?'quality':critKey];
+  if(critKey==='price'){
+    if(item.price>state.budget)return 'X';
+    const ratio=item.price/state.budget;
+    if(ratio<=.7)return 'O';
+    if(ratio<=.95)return 'T';
+    return 'T';
+  }
+  if(critKey==='need'){
+    // need = quality + durability average mostly
+    const score=(item.quality+item.durability)/2;
+    if(score>=4)return 'O';
+    if(score>=2.5)return 'T';
+    return 'X';
+  }
+  if(v>=4)return 'O';
+  if(v>=2.5)return 'T';
+  return 'X';
+}
+function markValue(m){return m==='O'?3:m==='T'?2:1}
+function itemTotal(item){
+  let t=0;
+  for(const c of state.picked)t+=markValue(ratingFor(item,c));
+  return t;
+}
+
+function bestItemIdx(){
+  // best among within budget; if all over budget pick smallest score is bad
+  let best=-1,bestScore=-1;
+  state.items.forEach((it,i)=>{
+    if(it.price>state.budget)return;
+    const s=itemTotal(it);
+    if(s>bestScore){bestScore=s;best=i}
+  });
+  if(best===-1){ // all over budget — pick none correct
+    return -1;
+  }
+  return best;
+}
+
+/* ====== RENDER ====== */
+const app=document.getElementById('app');
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e}
+
+function render(){
+  app.innerHTML='';
+  if(state.step===0)renderTitle();
+  else if(state.step===1)renderItems();
+  else if(state.step===2)renderInfo();
+  else if(state.step===3)renderCriteria();
+  else if(state.step===4)renderEval();
+  else if(state.step===5)renderChoose();
+  else if(state.step===6)renderResult();
+  else if(state.step===7)renderFinal();
+}
+
+function header(){
+  const h=el('div','header');
+  h.appendChild(el('div','round-info','🎯 '+state.round+' / '+TOTAL_ROUNDS+' 라운드'));
+  h.appendChild(el('div','stage-badge','STEP '+Math.min(state.step,5)));
+  h.appendChild(el('div','score-pill','⭐ '+state.totalStars));
+  return h;
+}
+
+function renderTitle(){
+  const s=el('div','screen');
+  const wrap=el('div','title-wrap');
+  wrap.appendChild(el('div','logo','🛒'));
+  wrap.appendChild(el('div','title','합리적 소비 챌린지'));
+  wrap.appendChild(el('div','subtitle','똑똑한 소비자가 되어 보세요!'));
+  const start=el('button','start-btn btn','🎮 게임 시작!');
+  start.onclick=()=>{SFX.pop();state.round=1;state.totalScore=0;state.totalStars=0;state.usedScenarios=[];startRound();state.step=1;render()};
+  wrap.appendChild(start);
+  const g=gradeOf(state.totalScore);
+  const lvl=el('div','level-display');
+  lvl.innerHTML='나의 등급: <span>'+g.emoji+' '+g.name+'</span><br>플레이 횟수: '+state.played+'회 · 누적 ⭐ '+state.totalStars;
+  wrap.appendChild(lvl);
+  const info=el('div','clay-blue info-card');
+  info.innerHTML='<b>📖 게임 방법</b><br>① 사고 싶은 물건 3개를 살펴봐요<br>② 가진 돈을 확인해요<br>③ 물건을 눌러 정보를 모아요<br>④ 선택 기준 3가지를 정하고 평가해요<br>⑤ 가장 합리적인 물건을 선택!<br><br><b>💡 합리적 소비란?</b> 적은 돈으로 큰 만족을 얻는 똑똑한 소비예요.';
+  wrap.appendChild(info);
+  s.appendChild(wrap);
+  app.appendChild(s);
+}
+
+function renderItems(){
+  const s=el('div','screen');
+  s.appendChild(header());
+  const sc=el('div','clay scenario-card');
+  sc.innerHTML='<span class="scenario-emoji">'+state.scenario.emoji+'</span><div class="scenario-title">'+state.scenario.title+'</div><div class="scenario-desc">'+state.scenario.desc+'</div>';
+  s.appendChild(sc);
+  s.appendChild(el('div','step-title','<span class="step-num">1</span> 사고 싶은 물건 살펴보기'));
+  const grid=el('div','items-grid');
+  state.items.forEach(it=>{
+    const c=el('div','clay item-card btn-press');
+    c.innerHTML='<span class="item-emoji">'+it.emoji+'</span><div class="item-name">'+it.name+'</div>';
+    c.onclick=()=>{SFX.pop();spawnPartsAt(c)};
+    grid.appendChild(c);
+  });
+  s.appendChild(grid);
+  const next=el('button','action-btn btn','다음 ➜');
+  next.onclick=()=>{SFX.page();state.step=2;render()};
+  s.appendChild(next);
+  app.appendChild(s);
+}
+
+function spawnPartsAt(el2){
+  const r=el2.getBoundingClientRect();
+  spawnParts(r.left+r.width/2,r.top+r.height/2,20);
+}
+
+function renderInfo(){
+  const s=el('div','screen');
+  s.appendChild(header());
+  s.appendChild(el('div','step-title','<span class="step-num">2</span> 가진 돈 확인하기'));
+  const wallet=el('div','clay-green budget-card');
+  wallet.innerHTML='<span class="wallet-emoji">💰</span><div class="budget-text"><div class="budget-label">지갑 속 돈</div><div class="budget-amount">'+state.budget.toLocaleString()+'원</div></div>';
+  wallet.onclick=()=>{SFX.coin();spawnPartsAt(wallet)};
+  s.appendChild(wallet);
+  s.appendChild(el('div','step-title','<span class="step-num">3</span> 정보 모으기 <span style="font-size:12px;color:#8a6a5a;font-weight:600;margin-left:auto">👆 눌러서 자세히 보기</span>'));
+  const grid=el('div','items-grid');
+  state.items.forEach((it,i)=>{
+    const c=el('div','clay-yellow item-card btn-press');
+    const over=it.price>state.budget;
+    c.innerHTML='<span class="item-emoji">'+it.emoji+'</span><div class="item-name">'+it.name+'</div><div class="item-price'+(over?' over':'')+'">'+it.price.toLocaleString()+'원</div><div class="item-feature">'+it.feat+'</div>';
+    if(over)c.classList.add('over-budget');
+    c.onclick=()=>{SFX.tap();spawnPartsAt(c);showDetail(it)};
+    grid.appendChild(c);
+  });
+  s.appendChild(grid);
+  const next=el('button','action-btn btn','평가 기준 정하기 ➜');
+  next.onclick=()=>{SFX.page();state.step=3;render()};
+  s.appendChild(next);
+  app.appendChild(s);
+}
+
+function showDetail(it){
+  const m=el('div','modal');
+  const c=el('div','clay-purple modal-card');
+  const over=it.price>state.budget;
+  c.innerHTML='<span class="modal-emoji">'+it.emoji+'</span><div class="modal-name">'+it.name+'</div><div class="modal-price" style="color:'+(over?'#aa3030':'#3a8a3a')+'">'+it.price.toLocaleString()+'원'+(over?' (예산 초과!)':'')+'</div><div class="modal-attrs">'+
+    '⭐ 품질: '+stars(it.quality)+'<br>💪 내구성: '+stars(it.durability)+'<br>🎨 디자인: '+stars(it.design)+'<br>📏 크기/양: '+stars(it.size)+
+    '</div><div class="modal-feat">💬 '+it.feat+'</div>';
+  const btn=el('button','modal-close btn','확인');
+  btn.onclick=()=>{SFX.back();m.remove()};
+  c.appendChild(btn);
+  m.appendChild(c);
+  m.onclick=e=>{if(e.target===m){SFX.back();m.remove()}};
+  document.body.appendChild(m);
+}
+function stars(n){let h='';for(let i=1;i<=5;i++)h+='<span class="star'+(i>n?' off':'')+'">★</span>';return h}
+
+function renderCriteria(){
+  const s=el('div','screen');
+  s.appendChild(header());
+  s.appendChild(el('div','step-title','<span class="step-num">4</span> 선택 기준 정하기'));
+  const hint=el('div','criteria-hint','내가 중요하게 생각하는 기준 <b>3가지</b>를 골라봐요!');
+  s.appendChild(hint);
+  const pool=el('div','criteria-pool');
+  CRITERIA.forEach(c=>{
+    const chip=el('div','clay criteria-chip btn-press');
+    chip.textContent=c.label;
+    if(state.picked.includes(c.key))chip.classList.add('picked');
+    chip.onclick=()=>{
+      if(state.picked.includes(c.key)){state.picked=state.picked.filter(x=>x!==c.key);SFX.back()}
+      else{if(state.picked.length>=3){toast('3개까지만 골라요!');SFX.bad();return}state.picked.push(c.key);SFX.pick();spawnPartsAt(chip)}
+      render();
+    };
+    pool.appendChild(chip);
+  });
+  s.appendChild(pool);
+  const cnt=el('div','criteria-hint','선택한 기준: <b style="color:#d65a3a">'+state.picked.length+' / 3</b>');
+  s.appendChild(cnt);
+  const next=el('button','action-btn btn'+(state.picked.length===3?'':' '),'점수 매기기 ➜');
+  if(state.picked.length!==3)next.disabled=true;
+  next.onclick=()=>{SFX.page();state.step=4;render()};
+  s.appendChild(next);
+  app.appendChild(s);
+}
+
+function renderEval(){
+  const s=el('div','screen');
+  s.appendChild(header());
+  s.appendChild(el('div','step-title','<span class="step-num">4</span> 점수 매기기'));
+  const hint=el('div','criteria-hint','자동으로 평가됐어요! 점수를 확인해 봐요.<br>[ <span style="color:#2a8a2a;font-weight:900">O</span>: 그렇다(3점) <span style="color:#8a5a10;font-weight:900">△</span>: 보통(2점) <span style="color:#8a2a10;font-weight:900">X</span>: 아니다(1점) ]');
+  s.appendChild(hint);
+  const t=el('div','clay eval-table');
+  // header
+  const hr=el('div','eval-row head');
+  hr.appendChild(el('div','eval-label','기준'));
+  state.items.forEach(it=>{const c=el('div','eval-cell');c.style.fontSize='22px';c.textContent=it.emoji;t.appendChild(c);hr.appendChild(c)});
+  t.appendChild(hr);
+  state.picked.forEach(ck=>{
+    const cdef=CRITERIA.find(x=>x.key===ck);
+    const r=el('div','eval-row');
+    r.appendChild(el('div','eval-label',cdef.label));
+    state.items.forEach(it=>{
+      const m=ratingFor(it,ck);
+      const cell=el('div','eval-cell');
+      const mark=el('div','eval-mark auto '+m,m==='T'?'△':m);
+      cell.appendChild(mark);
+      r.appendChild(cell);
+    });
+    t.appendChild(r);
+  });
+  // total
+  const tr=el('div','eval-row total');
+  tr.appendChild(el('div','eval-label','총점'));
+  const best=bestItemIdx();
+  state.items.forEach((it,i)=>{
+    const total=itemTotal(it);
+    const cell=el('div','eval-cell');
+    const ts=el('div','total-score'+(i===best?' best':''),total+'점');
+    cell.appendChild(ts);
+    tr.appendChild(cell);
+  });
+  t.appendChild(tr);
+  s.appendChild(t);
+  // budget reminder
+  const br=el('div','criteria-hint','💰 예산: <b>'+state.budget.toLocaleString()+'원</b> · 예산을 넘는 물건은 살 수 없어요!');
+  s.appendChild(br);
+  const next=el('button','action-btn btn','이제 선택할래요 ➜');
+  next.onclick=()=>{SFX.page();state.step=5;render()};
+  s.appendChild(next);
+  app.appendChild(s);
+}
+
+function renderChoose(){
+  const s=el('div','screen');
+  s.appendChild(header());
+  s.appendChild(el('div','step-title','<span class="step-num">5</span> 선택하기'));
+  const hint=el('div','criteria-hint','가장 <b>합리적인</b> 물건을 하나 골라봐요!');
+  s.appendChild(hint);
+  const grid=el('div','items-grid');
+  state.items.forEach((it,i)=>{
+    const c=el('div','clay-pink item-card btn-press');
+    const over=it.price>state.budget;
+    const total=itemTotal(it);
+    c.innerHTML='<span class="item-emoji">'+it.emoji+'</span><div class="item-name">'+it.name+'</div><div class="item-price'+(over?' over':'')+'">'+it.price.toLocaleString()+'원</div><div class="item-feature" style="font-size:13px;font-weight:800;color:#d65a3a">총 '+total+'점</div>';
+    if(over)c.classList.add('over-budget');
+    if(state.selectedItemIdx===i)c.classList.add('selected');
+    c.onclick=()=>{SFX.pick();state.selectedItemIdx=i;spawnPartsAt(c);render()};
+    grid.appendChild(c);
+  });
+  s.appendChild(grid);
+  const next=el('button','action-btn green btn','✓ 이것으로 결정!');
+  if(state.selectedItemIdx<0)next.disabled=true;
+  next.onclick=()=>{SFX.page();finishRound()};
+  s.appendChild(next);
+  app.appendChild(s);
+}
+
+function finishRound(){
+  const idx=state.selectedItemIdx;
+  const it=state.items[idx];
+  const best=bestItemIdx();
+  const over=it.price>state.budget;
+  let stars=0,score=0,kind='bad',msg='',emo='😅',title='';
+  if(over){
+    stars=0;score=0;kind='bad';emo='😱';title='예산 초과!';
+    msg='가진 돈은 <b>'+state.budget.toLocaleString()+'원</b>인데 <b>'+it.price.toLocaleString()+'원</b>짜리를 골랐어요. 예산을 넘는 물건은 살 수 없어요!';
+    SFX.bad();
+  } else if(idx===best){
+    stars=3;score=5;kind='win';emo='🎉';title='완벽한 선택!';
+    msg='기준에 가장 잘 맞는 <b>'+it.name+'</b>을(를) 골랐어요!<br>적은 돈으로 큰 만족, 이게 바로 <b>합리적 소비</b>예요!';
+    SFX.win();confetti();
+  } else {
+    const myT=itemTotal(it),bestT=itemTotal(state.items[best]);
+    const gap=bestT-myT;
+    if(gap<=1){stars=2;score=3;kind='ok';emo='😊';title='괜찮은 선택이에요';
+      msg='<b>'+it.name+'</b>도 좋아요! 하지만 <b>'+state.items[best].name+'</b>이(가) 기준에 조금 더 잘 맞았어요.';SFX.ok()}
+    else{stars=1;score=1;kind='bad';emo='🤔';title='아쉬워요';
+      msg='기준에 더 잘 맞는 물건은 <b>'+state.items[best].name+'</b>이었어요!<br>다음에는 평가 점수를 더 잘 살펴봐요.';SFX.bad()}
+  }
+  state.roundScore=score;
+  state.roundStars=stars;
+  state.totalScore+=score;
+  state.totalStars+=stars;
+  state._result={stars,kind,msg,emo,title,it,best};
+  state.step=6;
+  render();
+}
+
+function renderResult(){
+  const r=state._result;
+  const s=el('div','screen');
+  s.appendChild(header());
+  const wrap=el('div','clay result-wrap');
+  wrap.appendChild(el('span','result-emoji',r.emo));
+  wrap.appendChild(el('div','result-title '+r.kind,r.title));
+  const sw=el('div','stars');
+  for(let i=0;i<3;i++)sw.innerHTML+='<span class="s">'+(i<r.stars?'⭐':'☆')+'</span>';
+  wrap.appendChild(sw);
+  setTimeout(()=>{if(r.stars>=1)SFX.star()},250);
+  setTimeout(()=>{if(r.stars>=2)SFX.star()},500);
+  setTimeout(()=>{if(r.stars>=3)SFX.star()},750);
+  const msgEl=el('div','result-msg');
+  msgEl.innerHTML='내 선택: <b>'+r.it.emoji+' '+r.it.name+'</b> ('+r.it.price.toLocaleString()+'원)<br><br>'+r.msg;
+  wrap.appendChild(msgEl);
+  const acts=el('div','result-actions');
+  if(state.round<TOTAL_ROUNDS){
+    const next=el('button','action-btn btn','다음 라운드 ➜');
+    next.onclick=()=>{SFX.page();state.round++;startRound();state.step=1;render()};
+    acts.appendChild(next);
+  } else {
+    const fin=el('button','action-btn green btn','🏆 최종 결과 보기');
+    fin.onclick=()=>{SFX.win();state.played++;saveStats();state.step=7;render();confetti()};
+    acts.appendChild(fin);
+  }
+  wrap.appendChild(acts);
+  s.appendChild(wrap);
+  app.appendChild(s);
+}
+
+function renderFinal(){
+  const s=el('div','screen');
+  const wrap=el('div','clay-yellow final-wrap');
+  const g=gradeOf(state.totalScore);
+  wrap.appendChild(el('span','final-emoji',g.emoji));
+  wrap.appendChild(el('div','final-title','게임 완료!'));
+  wrap.appendChild(el('div','final-grade',g.name));
+  const st=el('div','final-stats');
+  st.innerHTML='획득 점수: <b>'+state.totalScore+'점</b><br>모은 별: <b>⭐ '+state.totalStars+'개</b><br>플레이 라운드: <b>'+TOTAL_ROUNDS+'회</b>';
+  wrap.appendChild(st);
+  const msg=el('div','result-msg');
+  if(state.totalStars>=13)msg.innerHTML='🌟 정말 대단해요! 합리적 소비의 달인이에요!';
+  else if(state.totalStars>=8)msg.innerHTML='👍 잘했어요! 똑똑한 소비자가 되어가고 있어요.';
+  else msg.innerHTML='💪 괜찮아요! 다시 도전하면 더 잘할 수 있어요.';
+  wrap.appendChild(msg);
+  const acts=el('div','result-actions');
+  const again=el('button','action-btn btn','🔄 다시 도전!');
+  again.onclick=()=>{SFX.pop();state.round=1;state.totalScore=0;state.totalStars=0;state.usedScenarios=[];startRound();state.step=1;render()};
+  const home=el('button','action-btn green btn','🏠 처음으로');
+  home.onclick=()=>{SFX.back();state.step=0;render()};
+  acts.appendChild(again);
+  acts.appendChild(home);
+  wrap.appendChild(acts);
+  s.appendChild(wrap);
+  app.appendChild(s);
+}
+
+function toast(t){
+  const x=el('div','toast',t);
+  document.body.appendChild(x);
+  setTimeout(()=>{x.style.transition='opacity .4s';x.style.opacity='0';setTimeout(()=>x.remove(),400)},1400);
+}
+
+/* init */
+render();
+</script>
+</body>
+</html>
